@@ -1,7 +1,7 @@
 
 from numpy import random
 import pdb
-
+#from scipy import stats
 # transitions = {('s_1','a_1','s_1'):.3,
 # 				('s_1','a_1','s_2'):.7,
 
@@ -99,23 +99,60 @@ def choose_action(s, actions, r_set, q, transitions):
 		# q_sa = q_sa + alpha*(r + gamma*max(q_sp) - q_sa)
 		# return q_sa, s_prime, actions[j-1]
 
+		#next task: make it choose randomly rather than choose the non-greedy action
 		q_sp = list()
 		chance_action = random.random()
 		#q_s.remove(q_sa)
-		actions_new = list(actions)
-		actions_new.remove(actions[q_s.index(max(q_s))])
-		for j in range(1,len(actions_new)+1):
-			if chance_action <= 1/(j*len(actions_new)):
-				#call transition to change the state given action probabilities
-				s_prime, r = transition(s, actions_new[j-1], r_set, transitions)
-				q_sa = q[(s, actions_new[j-1])]
-				for h in range(len(actions)-1):
-					q_sp.append(q[(s_prime,actions[h])])
+		# print 'mew'
+		# print actions
+		# print len(actions)
+		u = [.5, .5]
+		g = select_based_on_probabilities(u)
+		q_sa = q[(s, actions[g-1])]
+		s_prime, r = transition(s, actions[g-1], r_set, transitions)
+		#pdb.set_trace()
+		for u in range(len(actions)):
+			q_sp.append(q[s_prime,actions[u]])
+		q_sa = q_sa + alpha*(r+gamma*max(q_sp) - q_sa)
+		return q_sa, s_prime, actions[g-1]
 
-				q_sa = q[(s,actions_new[j-1])] + alpha*(r + gamma*max(q_sp) - q_sa)
-		#measure q
-		#update state
-				return q_sa, s_prime, actions_new[j-1]
+
+
+		# for j in range(1,len(actions)+1):
+		# 	print 'l'
+		# 	if chance_action <= j*1/(len(actions)):
+		# 		#chance_action less than chance
+		# 		#call transition to change the state given action probabilities
+		# 		print 'wa'
+		# 		s_prime, r = transition(s, actions[j-1], r_set, transitions)
+		# 		q_sa = q[(s, actions[j-1])]
+		# 		for h in (len(actions)-1):
+		# 			q_sp.append(q[(s_prime,actions[h])])
+
+		# 		print 'hello'
+		# 		q_sa = q[(s,actions[j-1])] + alpha*(r + gamma*max(q_sp) - q_sa)
+		# #measure q
+		# #update state
+		# 		return q_sa, s_prime, actions[j-1]
+
+
+		# q_sp = list()
+		# chance_action = random.random()
+		# #q_s.remove(q_sa)
+		# actions_new = list(actions)
+		# actions_new.remove(actions[q_s.index(max(q_s))])
+		# for j in range(1,len(actions_new)+1):
+		# 	if chance_action <= 1/(j*len(actions_new)):
+		# 		#call transition to change the state given action probabilities
+		# 		s_prime, r = transition(s, actions_new[j-1], r_set, transitions)
+		# 		q_sa = q[(s, actions_new[j-1])]
+		# 		for h in (len(actions)-1):
+		# 			q_sp.append(q[(s_prime,actions[h])])
+
+		# 		q_sa = q[(s,actions_new[j-1])] + alpha*(r + gamma*max(q_sp) - q_sa)
+		# #measure q
+		# #update state
+		# 		return q_sa, s_prime, actions_new[j-1]
 
 
 		# for j in range(1,len(actions_new)+1):
