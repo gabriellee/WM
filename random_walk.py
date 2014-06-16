@@ -14,6 +14,14 @@ import pdb
 # 				('s_2','a_2','s_1'):.2,
 # 				('s_2','a_2','s_2'):.8}
 
+def select_based_on_probabilities(probs):
+	random_num = random.random()
+	already_covered = 0
+	for j in range(1,len(probs) + 1):
+		if random_num <= probs[j - 1] + already_covered:
+			return j		
+		already_covered += probs[j - 1]
+
 def transition(s, a, r_set, transitions):
 	'''transitions to a new state, given a probability distribution for a given action
 	returns a reward and the new state'''
@@ -22,28 +30,31 @@ def transition(s, a, r_set, transitions):
 		#pdb.set_trace()
 		probs.append(transitions[s,a,'s_%d'%i])
 		#print i, a, s
-	random_num = random.random()
-	already_covered = 0
-	#print 'hello'
-	for j in range(1,len(probs) + 1):
+
+	j = select_based_on_probabilities(probs)
+	return 's_%d'%j, r_set['s_%d'%j]
+	# random_num = random.random()
+	# already_covered = 0
+	# #print 'hello'
+	# for j in range(1,len(probs) + 1):
+	# 	#print j
+	# 	#print s
+	# 	#pdb.set_trace()
+	# 	if random_num <= probs[j - 1] + already_covered:
+	# 		#print 'whoosh'
+	# 		return 's_%d'%j, r_set['s_%d'%j]
+	# 	already_covered += probs[j-1]
 		#print j
-		#print s
-		#pdb.set_trace()
-		if random_num <= probs[j - 1] + already_covered:
-			#print 'whoosh'
-			return 's_%d'%j, r_set['s_%d'%j]
-		already_covered += probs[j-1]
-		#print j
-		if j == len(probs) + 1:
-			pdb.set_trace()
-			#return
+		#if j == len(probs) + 1:
+		#	pdb.set_trace()
 
 
 def choose_action(s, actions, r_set, q, transitions):
+	'''chooses an action based on e-greedy policy.  Then calls to transitions to switch the values and returns the new q-value and state'''
 	chance_greedy = random.random()
-	epsilon = .1
+	epsilon = .8
 	alpha = .05
-	gamma = .5
+	gamma = .9
 	q_s = list()
 
 	#define q values for all actions from state s
@@ -58,19 +69,36 @@ def choose_action(s, actions, r_set, q, transitions):
 	 	#pdb.set_trace()
 		s_prime, r = transition(s, actions[q_s.index(max(q_s))], r_set, transitions)
 
+		#q values for s_prime
 		q_sp = list()
 		for h in range(len(actions)-1):
 			q_sp.append(q[(s_prime,actions[h])])
+
 
 		#update q_sa
 		q_sa = q_sa + alpha*(r + gamma*max(q_sp) - q_sa)
 		return q_sa, s_prime, actions[q_s.index(max(q_s))]#put q_sa into q array
 
-
-
-		#measure Q
-		#update state
 	else:
+		# q_sp = list()
+		# chance_action = random.random()
+		# #q_s.remove(q_sa)
+		# #actions_new = list(actions)
+		# #actions_new.remove(actions[q_s.index(max(q_s))])
+		# probs = list()
+		# for j in range(len(actions)):
+		# 	probs.append(1.0/len(actions))
+
+		# a = actions[select_based_on_probabilities(probs) - 1]
+		# s_prime, r = transition(s, a, r_set, transitions) 
+		# q_sa = q[(s, a)]
+
+		# for h in range(len(actions)):
+		# 	q_sp.append(q[(s_prime,actions[h])])
+
+		# q_sa = q_sa + alpha*(r + gamma*max(q_sp) - q_sa)
+		# return q_sa, s_prime, actions[j-1]
+
 		q_sp = list()
 		chance_action = random.random()
 		#q_s.remove(q_sa)
@@ -85,9 +113,25 @@ def choose_action(s, actions, r_set, q, transitions):
 					q_sp.append(q[(s_prime,actions[h])])
 
 				q_sa = q[(s,actions_new[j-1])] + alpha*(r + gamma*max(q_sp) - q_sa)
-				#measure q
-				#update state
+		#measure q
+		#update state
 				return q_sa, s_prime, actions_new[j-1]
+
+
+		# for j in range(1,len(actions_new)+1):
+
+		# 	if chance_action <= 1/(j*len(actions_new)):
+		# 		#call transition to change the state given action probabilities
+		# 		#print s
+		# 		s_prime, r = transition(s, actions_new[j-1], r_set, transitions)
+		# 		q_sa = q[(s, actions_new[j-1])]
+		# 		for h in range(len(actions)-1):
+		# 			q_sp.append(q[(s_prime,actions[h])])
+
+		# 		q_sa = q[(s,actions_new[j-1])] + alpha*(r + gamma*max(q_sp) - q_sa)
+		# 		#measure q
+		# 		#update state
+		# 		return q_sa, s_prime, actions_new[j-1]
 
 	#max(q_sa)
 
@@ -175,25 +219,27 @@ def main():
 	q, r_set, states, actions, transitions = set_walk_values()
 	print transitions[('s_2', 'a_2', 's_3')]
 
-	for episode in range(10000):
+	for episode in range(15000):
 		state_num = 2
 		#repeat for greatest accuracy		
 		for key in q:
 			tiny_rand = random.uniform(.0000001,.000001)
+			tiny_rand = 0
 			q[key] = q[key] + tiny_rand
 		#calculate q at the starting state
-		q_sa, s_prime, a = choose_action(states[state_num], actions, r_set, q, transitions)
-		q[(states[state_num], a)] = q_sa
+	#	q_sa, s_prime, a = choose_action(states[state_num], actions, r_set, q, transitions)
+	#	q[(states[state_num], a)] = q_sa
+		s = 's_3'
 
-		while((s_prime != 's_1') and (s_prime != 's_4')):
+		while((s != 's_1') and (s != 's_5')):
 			#calculate Q values at each time step
 			#adjust q values so that they have tiny differences to guarantee no tie
 			for key in q:
 				tiny_rand = random.uniform(.0000001,.000001)
-				q[key] = q[key] + tiny_rand
-
-			q_sa, s_prime, a = choose_action(s_prime, actions, r_set, q, transitions)
-			q[(s_prime, a)] = q_sa
+				#q[key] = q[key] + tiny_rand
+			q_sa, s_prime, a = choose_action(s, actions, r_set, q, transitions)
+			q[(s, a)] = q_sa
+			s = s_prime
 			# if s_prime == 's_1':
 			# 	if a == 'a_1':
 			# 		for key in q:
