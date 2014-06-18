@@ -1,6 +1,11 @@
 
 from numpy import random
 import pdb
+import pickle
+import csv
+
+w = csv.writer(open("output.csv", "w"))
+
 #from scipy import stats
 # transitions = {('s_1','a_1','s_1'):.3,
 # 				('s_1','a_1','s_2'):.7,
@@ -65,19 +70,19 @@ def choose_action(s, actions, r_set, q, transitions):
 		#take the greedy option
 		#define current q(s,a)
 	 	q_sa = max(q_s)
+	 	greedy_action = actions[q_s.index(max(q_s))]
 
 	 	#pdb.set_trace()
-		s_prime, r = transition(s, actions[q_s.index(max(q_s))], r_set, transitions)
+		s_prime, r = transition(s, greedy_action, r_set, transitions)
 
 		#q values for s_prime
 		q_sp = list()
-		for h in range(len(actions)-1):
+		for h in range(len(actions)):
 			q_sp.append(q[(s_prime,actions[h])])
-
 
 		#update q_sa
 		q_sa = q_sa + alpha*(r + gamma*max(q_sp) - q_sa)
-		return q_sa, s_prime, actions[q_s.index(max(q_s))]#put q_sa into q array
+		return q_sa, s_prime, greedy_action#put q_sa into q array
 
 	else:
 		# q_sp = list()
@@ -118,59 +123,6 @@ def choose_action(s, actions, r_set, q, transitions):
 
 
 
-		# for j in range(1,len(actions)+1):
-		# 	print 'l'
-		# 	if chance_action <= j*1/(len(actions)):
-		# 		#chance_action less than chance
-		# 		#call transition to change the state given action probabilities
-		# 		print 'wa'
-		# 		s_prime, r = transition(s, actions[j-1], r_set, transitions)
-		# 		q_sa = q[(s, actions[j-1])]
-		# 		for h in (len(actions)-1):
-		# 			q_sp.append(q[(s_prime,actions[h])])
-
-		# 		print 'hello'
-		# 		q_sa = q[(s,actions[j-1])] + alpha*(r + gamma*max(q_sp) - q_sa)
-		# #measure q
-		# #update state
-		# 		return q_sa, s_prime, actions[j-1]
-
-
-		# q_sp = list()
-		# chance_action = random.random()
-		# #q_s.remove(q_sa)
-		# actions_new = list(actions)
-		# actions_new.remove(actions[q_s.index(max(q_s))])
-		# for j in range(1,len(actions_new)+1):
-		# 	if chance_action <= 1/(j*len(actions_new)):
-		# 		#call transition to change the state given action probabilities
-		# 		s_prime, r = transition(s, actions_new[j-1], r_set, transitions)
-		# 		q_sa = q[(s, actions_new[j-1])]
-		# 		for h in (len(actions)-1):
-		# 			q_sp.append(q[(s_prime,actions[h])])
-
-		# 		q_sa = q[(s,actions_new[j-1])] + alpha*(r + gamma*max(q_sp) - q_sa)
-		# #measure q
-		# #update state
-		# 		return q_sa, s_prime, actions_new[j-1]
-
-
-		# for j in range(1,len(actions_new)+1):
-
-		# 	if chance_action <= 1/(j*len(actions_new)):
-		# 		#call transition to change the state given action probabilities
-		# 		#print s
-		# 		s_prime, r = transition(s, actions_new[j-1], r_set, transitions)
-		# 		q_sa = q[(s, actions_new[j-1])]
-		# 		for h in range(len(actions)-1):
-		# 			q_sp.append(q[(s_prime,actions[h])])
-
-		# 		q_sa = q[(s,actions_new[j-1])] + alpha*(r + gamma*max(q_sp) - q_sa)
-		# 		#measure q
-		# 		#update state
-		# 		return q_sa, s_prime, actions_new[j-1]
-
-	#max(q_sa)
 
 
 def set_walk_values():
@@ -255,8 +207,10 @@ def set_walk_values():
 def main():
 	q, r_set, states, actions, transitions = set_walk_values()
 	print transitions[('s_2', 'a_2', 's_3')]
+	q_table = dict()
+	time = 0
 
-	for episode in range(15000):
+	for episode in range(800):
 		state_num = 2
 		#repeat for greatest accuracy		
 		for key in q:
@@ -267,7 +221,7 @@ def main():
 	#	q_sa, s_prime, a = choose_action(states[state_num], actions, r_set, q, transitions)
 	#	q[(states[state_num], a)] = q_sa
 		s = 's_3'
-
+		step = 1
 		while((s != 's_1') and (s != 's_5')):
 			#calculate Q values at each time step
 			#adjust q values so that they have tiny differences to guarantee no tie
@@ -275,17 +229,25 @@ def main():
 				tiny_rand = random.uniform(.0000001,.000001)
 				#q[key] = q[key] + tiny_rand
 			q_sa, s_prime, a = choose_action(s, actions, r_set, q, transitions)
+			#if a == 'a_2' and s == 's_4':
+				#print q_sa
 			q[(s, a)] = q_sa
+			q_table[(s,a,time)] = q_sa
+
 			s = s_prime
 			# if s_prime == 's_1':
 			# 	if a == 'a_1':
 			# 		for key in q:
-			# 			print key,q[key], episode, step
+			# 			print key,q[key], episode, step			q_table[(s,a,episode,step)] = q_sa			q_table[(s,a,episode,step)] = q_sa			
+			time += 1
+	for key, val in q_table.items():
+    		w.writerow([key, val])
 
 	for key in q:
 	 	print key,q[key]
 	print state_num
-	return q
+	return q,q_table
+
 
 
 main()

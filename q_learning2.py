@@ -2,17 +2,17 @@
 from numpy import random
 import pdb
 
-transitions = {('s_1','a_1','s_1'):.3,
-				('s_1','a_1','s_2'):.7,
+# transitions = {('s_1','a_1','s_1'):.3,
+# 				('s_1','a_1','s_2'):.7,
 
-				('s_1','a_2','s_1'):.4,
-				('s_1','a_2','s_2'):.6,
+# 				('s_1','a_2','s_1'):.4,
+# 				('s_1','a_2','s_2'):.6,
 
-				('s_2','a_1','s_1'):.5,
-				('s_2','a_1','s_2'):.5,
+# 				('s_2','a_1','s_1'):.5,
+# 				('s_2','a_1','s_2'):.5,
 
-				('s_2','a_2','s_1'):.2,
-				('s_2','a_2','s_2'):.8}
+# 				('s_2','a_2','s_1'):.2,
+# 				('s_2','a_2','s_2'):.8}
 
 def transition(s, a, r_set, transitions):
 	'''transitions to a new state, given a probability distribution for a given action
@@ -120,7 +120,7 @@ def set_test_values():
 				 	(states[2],actions[1],states[0]) : .1,
 					(states[2],actions[1],states[1]) : .4, 
 					(states[2],actions[1],states[2]) : .5}
-	policy = {'s_1':'a_1', 's_2':'a_1', 's_3':'a_1'}
+	#policy = {'s_1':'a_1', 's_2':'a_1', 's_3':'a_1'}
 
 	q =  {('s_1','a_1'):0, ('s_1','a_2'):0,
 		('s_2','a_1'):0,('s_2','a_2'):0,
