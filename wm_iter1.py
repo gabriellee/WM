@@ -271,11 +271,11 @@ def main(alpha):
 	for key, val in q_table.items():
     		w.writerow([key, val])
 
-	for key in q:
+	#for key in q:
 	 	#print key,q[key]
 	return q,q_table
 
 
 
-main(alpha)
+#main(alpha)
 
