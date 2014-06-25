@@ -249,8 +249,8 @@ def main(alpha):
 	#	q[(states[state_num], a)] = q_sa
 		state_init = frozendict({'stimulus':'stim%d'%random.randint(1,num_stim+1), 'wm':[]})
 		s = state_init
-		print s
-		print episode
+		#print s
+		#print episode
 		step = 1
 		for step in range(20):
 			#calculate Q values at each time step
