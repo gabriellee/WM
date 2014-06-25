@@ -107,11 +107,11 @@ def set_values(alpha):
 	for i in range(1,num_stim+1):
 		stim_list.append('stim%d'%i)
 
-	state_init = frozendict({'stimulus':'stim%d'%random.randint(1,num_stim), 'wm':[]})
+	#state_init = frozendict({'stimulus':'stim%d'%random.randint(1,num_stim), 'wm':[]})
 
 	states = [frozendict({'stimulus':'stim1', 'wm':['stim1']}),frozendict({'stimulus':'stim1', 'wm':['stim2']}),frozendict({'stimulus':'stim2','wm':['stim1']}),frozendict({'stimulus':'stim2','wm':['stim2']}), frozendict({'stimulus':'stim1','wm':[]}),frozendict({'stimulus':'stim2','wm':[]}),]
 
-
+	empty_states = [frozendict({'stimulus':'stim1','wm':[]}),frozendict({'stimulus':'stim2','wm':[]})]
 	q = dict()
 
 
@@ -124,15 +124,16 @@ def set_values(alpha):
 			for start in states:
 					transitions[start, a, end] = 0;
 					q[start, a] = 0
-			transitions[state_init, a, end] = 0
+			#transitions[state_init, a, end] = 0
 
 	#define transition values for initial state
-	for newstim in stim_list:
-		transitions[state_init, 'ignore', frozendict({'stimulus': newstim, 'wm': []})] = float(1.0/num_stim)
-		if state_init['stimulus'] == newstim:
-			transitions[state_init, 'replace', frozendict({'stimulus': newstim, 'wm': [state_init['stimulus']]})] = 1 - alpha
-		else:
-			transitions[state_init, 'replace', frozendict({'stimulus': newstim, 'wm': [state_init['stimulus']]})] = float(alpha/(num_stim - 1))
+	for origin in empty_states:
+		for newstim in stim_list:
+			transitions[origin, 'ignore', frozendict({'stimulus': newstim, 'wm': []})] = float(1.0/num_stim)
+			if start['stimulus'] == newstim:
+				transitions[origin, 'replace', frozendict({'stimulus': newstim, 'wm': [start['stimulus']]})] = 1 - alpha
+			else:
+				transitions[origin, 'replace', frozendict({'stimulus': newstim, 'wm': [start['stimulus']]})] = float(alpha/(num_stim - 1))
 	#pdb.set_trace()
 
 
@@ -165,8 +166,8 @@ def set_values(alpha):
 					else:
 						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': start_state['wm']})] = float(alpha/(num_stim - 1))
 			q[start_state, action] = 0
-	q[state_init,'replace'] = 0
-	q[state_init, 'ignore'] = 0
+	#q[state_init,'replace'] = 0
+	#q[state_init, 'ignore'] = 0
 
 
 
@@ -226,11 +227,11 @@ def set_values(alpha):
 
 	r_set = {states[0]:1, states[1]:0, states[2]:0, states[3]:1, states[4]:0, states[5]:0}
 
-	return q, r_set, states, actions, transitions, num_stim, state_init
+	return q, r_set, states, actions, transitions, num_stim#, state_init
 
 
 def main(alpha):
-	q, r_set, states, actions, transitions, num_stim, state_init = set_values(alpha)
+	q, r_set, states, actions, transitions, num_stim = set_values(alpha)
 	q_table = dict()
 	time = 0
 
@@ -246,7 +247,10 @@ def main(alpha):
 		#calculate q at the starting state
 	#	q_sa, s_prime, a = choose_action(states[state_num], actions, r_set, q, transitions)
 	#	q[(states[state_num], a)] = q_sa
+		state_init = frozendict({'stimulus':'stim%d'%random.randint(1,num_stim+1), 'wm':[]})
 		s = state_init
+		print s
+		print episode
 		step = 1
 		for step in range(20):
 			#calculate Q values at each time step
