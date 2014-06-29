@@ -30,7 +30,7 @@ def transition(s, a, r_set, transitions, states):
 	for i in range(1,len(states)+1):
 		#pdb.set_trace()
 		probs.append(transitions[s,a,states[i-1]])
-		#print i, a, s
+		#print i, a, s, states[i-1]
 
 	j = select_based_on_probabilities(probs)
 	#print states
@@ -39,6 +39,7 @@ def transition(s, a, r_set, transitions, states):
 	#print s
 	#print a
 	#print #pdb.set_trace()
+
 	return states[j-1], r_set[states[j-1]]
 
 
@@ -134,33 +135,46 @@ def set_values(alpha):
 		for content in wm_set:
 			states.append(frozendict({'stimulus':presented_stim, 'wm':content}))
 
-	pdb.set_trace()
+	#pdb.set_trace()
 
 
 
-	empty_states = [frozendict({'stimulus':'stim1','wm':[]}),frozendict({'stimulus':'stim2','wm':[]})]
+	#define initial states
+	empty_states = list()
+	for init_stim in stim_list:
+		empty_states.append(frozendict({'stimulus':init_stim,'wm':frozenset([])}))
 	q = dict()
 
+	states.extend(empty_states)
 
 
 	#alpha = 1
-
 	#initialize transition values as zeros
 	for end in states:
 		for a in actions:
 			for start in states:
+
 					transitions[start, a, end] = 0;
 					q[start, a] = 0
 			#transitions[state_init, a, end] = 0
 
 	#define transition values for initial state
-	# for origin in empty_states:
-	# 	for newstim in stim_list:
-	# 		transitions[origin, 'ignore', frozendict({'stimulus': newstim, 'wm': []})] = float(1.0/num_stim)
-	# 		if start['stimulus'] == newstim:
-	# 			transitions[origin, 'replace', frozendict({'stimulus': newstim, 'wm': [start['stimulus']]})] = 1 - alpha
-	# 		else:
-	# 			transitions[origin, 'replace', frozendict({'stimulus': newstim, 'wm': [start['stimulus']]})] = float(alpha/(num_stim - 1))
+	for origin in empty_states:
+	 	for newstim in stim_list:
+	 		for act in actions:
+				if act == 'ignore':
+					transitions[origin, 'ignore', frozendict({'stimulus': newstim, 'wm': frozenset({})})] = float(1.0/num_stim)
+				else:
+					if start['stimulus'] == newstim:
+						transitions[origin, act, frozendict({'stimulus': newstim, 'wm': frozenset({start['stimulus']})})] = 1 - alpha
+						#if origin['stimulus'] == 'stim5' and act == 'replace_0':
+							#print transitions[origin, act, frozendict({'stimulus': newstim, 'wm': frozenset({start['stimulus']})})]
+					else:
+						transitions[origin, act, frozendict({'stimulus': newstim, 'wm': frozenset({start['stimulus']})})] = float(alpha)/(num_stim - 1)
+						#if origin['stimulus'] == 'stim5' and act == 'replace_0':
+							#print transitions[origin, act, frozendict({'stimulus': newstim, 'wm': frozenset({start['stimulus']})})]
+							#print alpha
+							#print float(alpha)/(num_stim - 1))
 	#pdb.set_trace()
 
 
@@ -168,26 +182,35 @@ def set_values(alpha):
 
 
 	#define transition values
-	for start_state in states:#[:-1]:
+	for start_state in states:#excluse initial states
+		if start_state == states[-1*len(stim_list)]:
+			break
 		for action in actions:
 			if action == 'replace_0' or action == 'replace_1' or action == 'replace_2' or action == 'replace_3':
 				for new_stim in stim_list:
+					#print start_state['wm']
 					#print action, new_stim, start_state
 					#print start_state,action, frozendict({'stimulus': new_stim, 'wm': [start_state['stimulus']]})
+					#print start_state
 					new_mem = list(start_state['wm'])
-					new_mem[action[-1]] = start_state['stimulus']#i can't index
+					#print new_mem, action
+					if len(new_mem) < (int(action[-1]) + 1):
+						new_mem.extend(start_state['stimulus'])
+					else:
+						new_mem[int(action[-1])] = start_state['stimulus']#i can't index
 					if start_state['stimulus'] == new_stim:
 					#stimulus stays the same
 						#new_mem = list(start_state['wm'])
 						#new_mem[action[-1]] = start_state['stimulus']#i can't index
-						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(new_mem)})] = 1 - alpha
+						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(new_mem)})] = float(1 - alpha)/(len(start_state['wm']))
 						#forgetting
 						for forgotten_stim_ind in range(len(new_mem)):
 							mem_forget = list(new_mem)
 
-							if forgotten_stim_ind == action[-1]:
-								mem_forget[forgotten_stim_ind] = []
-								transitions[start_state, action, frozenset(mem_forget)] = #calculate it so that everything comes out to 1
+							if forgotten_stim_ind != int(action[-1]):
+								mem_forget.pop(forgotten_stim_ind)
+								#pdb.set_trace()
+								transitions[start_state, action, frozenset(mem_forget)] = float(1 - alpha)/(len(start_state['wm']))#you can't forget the stimulus you just learned
 							
 
 
@@ -197,7 +220,13 @@ def set_values(alpha):
 						#print transitions
 						#print start_state, action, frozendict({'stimulus': new_stim, 'wm':start_state['stimulus']})
 						#pdb.set_trace()
-						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm':frozenset(new_mem)})] = float(alpha/(num_stim - 1))
+						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm':frozenset(new_mem)})] = (float(alpha/(num_stim - 1)))/(len(start_state['wm']))
+						for forgotten_stim_ind in range(len(new_mem)):
+							mem_forget = list(new_mem)
+
+							if forgotten_stim_ind != int(action[-1]):
+								mem_forget.pop(forgotten_stim_ind)
+								transitions[start_state, action, frozenset(mem_forget)] = (1 - alpha)/(len(start_state['wm']))#you can't forget the stimulus you just learned
 					#right now all of the states with new wm:start_state[wm] have been covered
 
 					#transitions[state_init, action, frozendict({'stimulus':new_stim, 'wm': [start_state['stimulus']]})] = 1 #the agent HAS to learn when wm is empty
@@ -206,63 +235,22 @@ def set_values(alpha):
 					#print action, new_stim, start_state
 					#print start_state, action, frozendict({'stimulus': new_stim, 'wm': start_state['wm']})
 					if start_state['stimulus'] == new_stim:
-						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': start_state['wm']})] = 1 - alpha
+						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': start_state['wm']})] = float(1 - alpha)/(len(start_state['wm'])+1)
+						for forgotten_stim_ind in range(len(start_state['wm'])):
+							mem_forget = list(start_state['wm'])
+							mem_forget.pop(forgotten_stim_ind)
+							transitions[start_state, action, frozenset(mem_forget)] = float(1 - alpha)/(len(start_state['wm'])+1)
 					else:
-						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': start_state['wm']})] = float(alpha/(num_stim - 1))
+						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': start_state['wm']})] = float(alpha)/(num_stim - 1)
+						for forgotten_stim_ind in range(len(start_state['wm'])):
+							mem_forget = list(start_state['wm'])
+							mem_forget.pop(forgotten_stim_ind)
+							transitions[start_state, action, frozenset(mem_forget)] = float(1 - alpha)/(len(start_state['wm'])+1)
 			q[start_state, action] = 0
 	#q[state_init,'replace'] = 0
 	#q[state_init, 'ignore'] = 0
 
-
-
 	#pdb.set_trace()
-
-
-	# transitions = {(states[0],actions[0],states[0]) : (1-alpha),
-	# 				(states[0],actions[0],states[1]) : 0,
-	# 				(states[0],actions[0],states[2]) : alpha, 
-	# 				(states[0],actions[0],states[3]) : 0, 
-
-	# 				(states[0],actions[1],states[0]) : (1-alpha), 
-	# 				(states[0],actions[1],states[1]) : 0, 
-	# 				(states[0],actions[1],states[2]) : alpha, 
-	# 				(states[0],actions[1],states[3]) : 0, 
-
-
-	# 				(states[1],actions[0],states[0]) : (1-alpha), 
-	# 				(states[1],actions[0],states[1]) : 0, 
-	# 				(states[1],actions[0],states[2]) : alpha,
-	# 				(states[1],actions[0],states[3]) : 0, 
-
-	# 				(states[1],actions[1],states[0]) : 0, 
-	# 				(states[1],actions[1],states[1]) : (1-alpha), 
-	# 				(states[1],actions[1],states[2]) : 0,
-	# 				(states[1],actions[1],states[3]) : alpha, 
-
-	
-	# 				(states[2],actions[0],states[0]) : 0, 
-	# 				(states[2],actions[0],states[1]) : alpha, 
-	# 				(states[2],actions[0],states[2]) : 0, 
-	# 				(states[2],actions[0],states[3]) : (1-alpha), 
-
-	# 				(states[2],actions[1],states[0]) : alpha, 
-	# 				(states[2],actions[1],states[1]) : 0, 
-	# 				(states[2],actions[1],states[2]) : (1-alpha), 
-	# 				(states[2],actions[1],states[3]) : 0, 
-
-
-	# 				(states[3],actions[0],states[0]) : 0, 
-	# 				(states[3],actions[0],states[1]) : alpha, 
-	# 				(states[3],actions[0],states[2]) : 0,
-	# 				(states[3],actions[0],states[3]) : 1-alpha, 
-
-	# 				(states[3],actions[1],states[0]) : 0, 
-	# 				(states[3],actions[1],states[1]) : alpha, 
-	# 				(states[3],actions[1],states[2]) : 0,
-	# 				(states[3],actions[1],states[3]) : 1-alpha,}
-
-					
-	#policy = {'s_1':'a_1', 's_2':'a_1', 's_3':'a_1'}
 
 	for s in states:
 		for a in actions:
@@ -270,6 +258,7 @@ def set_values(alpha):
 
 
 	r_set = {states[0]:1, states[1]:0, states[2]:0, states[3]:1, states[4]:0, states[5]:0}
+	#pdb.set_trace()
 
 	return q, r_set, states, actions, transitions, num_stim#, state_init
 
@@ -291,7 +280,7 @@ def main(alpha):
 		#calculate q at the starting state
 	#	q_sa, s_prime, a = choose_action(states[state_num], actions, r_set, q, transitions)
 	#	q[(states[state_num], a)] = q_sa
-		state_init = frozendict({'stimulus':'stim%d'%random.randint(1,num_stim+1), 'wm':[]})
+		state_init = frozendict({'stimulus':'stim%d'%random.randint(1,num_stim+1), 'wm':frozenset({})})
 		s = state_init
 		#print s
 		#print episode
