@@ -35,8 +35,8 @@ def transition(s, a, r_set, transitions, states):
 	j = select_based_on_probabilities(probs)
 	#print states
 	#print j
-	#print probs
-	#print s
+	print probs
+	print s, a, states[j-1]
 	#print a
 	#print #pdb.set_trace()
 
@@ -102,6 +102,7 @@ def choose_action(s, actions, r_set, q, transitions, states):
 
 def set_values(alpha):
 
+	alpha = float(alpha)
 	actions = ['replace_0','replace_1', 'replace_2', 'replace_3', 'ignore']
 	stim_list = []
 	num_stim = 6
@@ -186,6 +187,10 @@ def set_values(alpha):
 		if start_state == states[-1*len(stim_list)]:
 			break
 		for action in actions:
+			if action == 'replace_1':
+				if start_state == frozendict({'stimulus':'stim5','wm':frozenset({'stim1'})}):
+					print 'okey'
+					#pdb.set_trace()
 			if action == 'replace_0' or action == 'replace_1' or action == 'replace_2' or action == 'replace_3':
 				for new_stim in stim_list:
 					#print start_state['wm']
@@ -195,14 +200,16 @@ def set_values(alpha):
 					new_mem = list(start_state['wm'])
 					#print new_mem, action
 					if len(new_mem) < (int(action[-1]) + 1):
-						new_mem.extend(start_state['stimulus'])
+						new_mem.append(start_state['stimulus'])
 					else:
 						new_mem[int(action[-1])] = start_state['stimulus']#i can't index
 					if start_state['stimulus'] == new_stim:
 					#stimulus stays the same
 						#new_mem = list(start_state['wm'])
 						#new_mem[action[-1]] = start_state['stimulus']#i can't index
-						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(new_mem)})] = float(1 - alpha)/(len(start_state['wm']))
+						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(new_mem)})] = float(1.0 - alpha)/(len(start_state['wm']))
+						if action == 'replace_1':
+							print 'debugs', transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(new_mem)})]
 						#forgetting
 						for forgotten_stim_ind in range(len(new_mem)):
 							mem_forget = list(new_mem)
@@ -210,7 +217,10 @@ def set_values(alpha):
 							if forgotten_stim_ind != int(action[-1]):
 								mem_forget.pop(forgotten_stim_ind)
 								#pdb.set_trace()
-								transitions[start_state, action, frozenset(mem_forget)] = float(1 - alpha)/(len(start_state['wm']))#you can't forget the stimulus you just learned
+								transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(mem_forget)})] = float(1 - alpha)/(len(start_state['wm']))#you can't forget the stimulus you just learned
+								if action == 'replace_1':
+									print '2x', transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(mem_forget)})]
+									#pdb.set_trace()
 							
 
 
@@ -220,13 +230,18 @@ def set_values(alpha):
 						#print transitions
 						#print start_state, action, frozendict({'stimulus': new_stim, 'wm':start_state['stimulus']})
 						#pdb.set_trace()
-						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm':frozenset(new_mem)})] = (float(alpha/(num_stim - 1)))/(len(start_state['wm']))
+						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm':frozenset(new_mem)})] = (float(float(alpha)/(num_stim - 1)))/(len(start_state['wm']))
+						if action == 'replace_1':
+							#pdb.set_trace()
+							print 'hallohh', transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm':frozenset(new_mem)})]
 						for forgotten_stim_ind in range(len(new_mem)):
 							mem_forget = list(new_mem)
 
 							if forgotten_stim_ind != int(action[-1]):
 								mem_forget.pop(forgotten_stim_ind)
-								transitions[start_state, action, frozenset(mem_forget)] = (1 - alpha)/(len(start_state['wm']))#you can't forget the stimulus you just learned
+								transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(mem_forget)})] = (alpha)/(len(start_state['wm']))#you can't forget the stimulus you just learned
+								if action == 'replace_1':
+									print 'meark', transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(mem_forget)})]
 					#right now all of the states with new wm:start_state[wm] have been covered
 
 					#transitions[state_init, action, frozendict({'stimulus':new_stim, 'wm': [start_state['stimulus']]})] = 1 #the agent HAS to learn when wm is empty
@@ -257,7 +272,13 @@ def set_values(alpha):
 			q[s,a] = 0
 
 
-	r_set = {states[0]:1, states[1]:0, states[2]:0, states[3]:1, states[4]:0, states[5]:0}
+	#define r_state
+	r_set = dict()
+	for state in states:
+		if state['stimulus'] in state['wm']:
+			r_set[state] = 1
+		else:
+			r_set[state] = 0
 	#pdb.set_trace()
 
 	return q, r_set, states, actions, transitions, num_stim#, state_init
@@ -291,6 +312,7 @@ def main(alpha):
 			for key in q:
 				tiny_rand = random.uniform(.0000001,.000001)
 				q[key] = q[key] + tiny_rand
+			print episode, step
 			q_sa, s_prime, a = choose_action(s, actions, r_set, q, transitions, states)
 			#print s_prime
 			#if a == 'a_2' and s == 's_4':
@@ -313,6 +335,6 @@ def main(alpha):
 	return q,q_table
 
 
-
+count_transition = 0
 main(1)
 
