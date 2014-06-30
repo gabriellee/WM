@@ -37,6 +37,8 @@ def transition(s, a, r_set, transitions, states):
 	#print j
 	print probs
 	print s, a, states[j-1]
+	if int(sum(probs)) != 1:
+		raise Exception('uh-oh, better check out those transition probabilities.')
 	#print a
 	#print #pdb.set_trace()
 
@@ -207,17 +209,17 @@ def set_values(alpha):
 					#stimulus stays the same
 						#new_mem = list(start_state['wm'])
 						#new_mem[action[-1]] = start_state['stimulus']#i can't index
-						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(new_mem)})] = float(1.0 - alpha)/(len(start_state['wm']))
+						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(new_mem)})] = float(1.0 - alpha)/(len(new_mem))
 						if action == 'replace_1':
 							print 'debugs', transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(new_mem)})]
 						#forgetting
-						for forgotten_stim_ind in range(len(new_mem)):
+						for forgotten_stim_ind in range(len(new_mem)-1):
 							mem_forget = list(new_mem)
 
 							if forgotten_stim_ind != int(action[-1]):
 								mem_forget.pop(forgotten_stim_ind)
 								#pdb.set_trace()
-								transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(mem_forget)})] = float(1 - alpha)/(len(start_state['wm']))#you can't forget the stimulus you just learned
+								transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(mem_forget)})] = float(1.0 - alpha)/(len(new_mem))#you can't forget the stimulus you just learned
 								if action == 'replace_1':
 									print '2x', transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(mem_forget)})]
 									#pdb.set_trace()
@@ -230,16 +232,16 @@ def set_values(alpha):
 						#print transitions
 						#print start_state, action, frozendict({'stimulus': new_stim, 'wm':start_state['stimulus']})
 						#pdb.set_trace()
-						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm':frozenset(new_mem)})] = (float(float(alpha)/(num_stim - 1)))/(len(start_state['wm']))
+						transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm':frozenset(new_mem)})] = float(alpha)/((num_stim-1)*(len(new_mem)))
 						if action == 'replace_1':
 							#pdb.set_trace()
 							print 'hallohh', transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm':frozenset(new_mem)})]
-						for forgotten_stim_ind in range(len(new_mem)):
+						for forgotten_stim_ind in range(len(new_mem) - 1):
 							mem_forget = list(new_mem)
 
 							if forgotten_stim_ind != int(action[-1]):
 								mem_forget.pop(forgotten_stim_ind)
-								transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(mem_forget)})] = (alpha)/(len(start_state['wm']))#you can't forget the stimulus you just learned
+								transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(mem_forget)})] = (alpha)/((num_stim-1)*(len(new_mem)))#you can't forget the stimulus you just learned
 								if action == 'replace_1':
 									print 'meark', transitions[start_state, action, frozendict({'stimulus': new_stim, 'wm': frozenset(mem_forget)})]
 					#right now all of the states with new wm:start_state[wm] have been covered
