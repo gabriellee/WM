@@ -290,6 +290,7 @@ def main(alpha):
 	q, r_set, states, actions, transitions, num_stim = set_values(alpha)
 	q_table = dict()
 	time = 0
+	state_order = list()
 
 
 
@@ -305,6 +306,7 @@ def main(alpha):
 	#	q[(states[state_num], a)] = q_sa
 		state_init = frozendict({'stimulus':'stim%d'%random.randint(1,num_stim+1), 'wm':frozenset({})})
 		s = state_init
+		state_order = [state_init]
 		#print s
 		#print episode
 		step = 1
@@ -316,6 +318,7 @@ def main(alpha):
 				q[key] = q[key] + tiny_rand
 			print episode, step
 			q_sa, s_prime, a = choose_action(s, actions, r_set, q, transitions, states)
+			state_order.append(s_prime)
 			#print s_prime
 			#if a == 'a_2' and s == 's_4':
 				#print q_sa
@@ -334,7 +337,7 @@ def main(alpha):
 
 	#for key in q:
 	 	#print key,q[key]
-	return q,q_table
+	return q,q_table, state_order
 
 
 count_transition = 0
