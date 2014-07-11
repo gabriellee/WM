@@ -6,11 +6,13 @@ from collections import Counter
 import math
 
 def main(n):
-	'''loop through every first word, determine how surprising each set of words is.  Then determine the probability of surprise by position'''
+	'''input: 
+			n: the number of loop through every first word, determine how surprising each set of words is.  Then determine the probability of surprise by position'''
 	sentence_list = divide_into_sentences()
 	n_gram_list, n_grams_by_sentences = divide_into_grams(n,sentence_list)
 
-	
+	pdb.set_trace()
+	prob_list = generate_prob_list(n_gram_list, all_words)
 
 	avg_position_info = []
 	for word_num in range(max(len(sentence_list[:]))):
@@ -62,9 +64,8 @@ def divide_into_grams(n,sentence_list):
 
 	return n_gram_list, n_grams_by_sentences
 
-	def generate_prob_list(n_gram_list, all_words):
-	''' generate list of probabilities for words given the preceding word.  Each element is a list containing the probabilities for all words in the sentence
-	'''
+	def generate_prob_list(n, n_gram_list, all_words):
+		'''generate list of probabilities for words given the preceding word(s).  Each element is a list containing the probabilities for all words in the sentence'''
 		n_gram_freqs = Counter(n_gram_list)
 		word_freqs = Counter(all_words)
 
@@ -72,16 +73,22 @@ def divide_into_grams(n,sentence_list):
 		for sentence in sentence_list:
 			prob_list = []
 			for word_num in range(len(sentence)):
-				if word_num != 0:
+				if word_num >= (n-1):
+					#fix the following line so that it loops through n times
 					prob_list.append(n_gram_freqs[sentence[word_num - 1]+' '+sentence[word_num]]/word_freqs[sentence[word_num]])
 				else:
+					#fix this line as well
 					prob_list.append(n_gram_freqs[sentence[word_num]]/word_freqs[sentence[word_num]])
-
-
+		return probs_list
 
 
 	def calc_avg_surprise(n, sentence_list, word_num, probs, n_grams_by_sentences):
-		'''n_grams_by_sentences is a list with an element for each sentence.  Each element is a list of the n-grams in that sentence.
+		'''input:
+				n: number of words in a gram.  
+				sentence_list: a list of all the sentences in the corpus
+				word_num:  the index, in the split up sentence(?), of the word whose information content is being examined
+				probs:  a dictionary containing the 
+		n_grams_by_sentences is a list with an element for each sentence.  Each element is a list of the n-grams in that sentence.
 		'''
 		count = 0
 		cumulative_sum = 0
@@ -95,10 +102,10 @@ def divide_into_grams(n,sentence_list):
 
 
 		for i in range(sentence_list):
-			if len(sentence_list[i]) !< word_num:
+			if len(sentence_list[i]) >= word_num:
 				count += 1
 				sum_start += -math.log(probs[sentence_list[word_num]])
-				sum_end += -math.log(probs[sentence[]])
+				sum_end += -math.log(probs[sentence[bleg]])
 
 			'''I'll count from the beginning and also from the end
 			you shouldn't average all of the fourth words together because sometimes those words are earlier in the sentence, sometimes later'''
