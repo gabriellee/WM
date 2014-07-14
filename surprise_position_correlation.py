@@ -28,9 +28,8 @@ def divide_into_sentences():
 	all_words = []
 
 	for raw in crs:
-		pdb.set_trace()
-		sentence_list.extend(raw.strip().split('./?/!'))
-	sentence_list = [elm[:-1] for elm in sentence_list]
+		sentence_list.extend(re.split('[!?.]', raw.strip()))
+	#sentence_list = [elm[:-1] for elm in sentence_list]
 	print sentence_list[:10]
 	sentence_list = sentence_list[:10]
 	for ind in range(len(sentence_list)):
