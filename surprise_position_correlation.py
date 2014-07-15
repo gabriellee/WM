@@ -14,10 +14,11 @@ def main(n):
 
 	#pdb.set_trace()
 	all_probs = generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences)
-	pdb.set_trace()
-	avg_position_info = []
-	for word_num in range(max(len(sentence_list[:]))):
-		avg_position_info = calc_avg_surprise(sentence_list, word_num, probs)
+	#pdb.set_trace()
+	avg_info_start = []
+	avg_info_end = []
+	for word_pos in range(max(len(sentence_list[:]))):
+		avg_info_start, avg_info_end = calc_avg_surprise(sentence_list, word_pos, all_probs)
 
 	#surprise_values = 
 
@@ -120,7 +121,7 @@ def generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences):
 
 
 
-	pdb.set_trace()
+	#pdb.set_trace()
 
 			# for word_num in range(len(word_list)):
 			# 	# n_gram = []
@@ -143,7 +144,7 @@ def generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences):
 	return all_probs
 
 
-	def calc_avg_surprise(n, sentence_list, word_num, probs, n_grams_by_sentences):
+	def calc_avg_surprise(n, sentence_list, word_pos, probs, n_grams_by_sentences):
 		'''input:
 				n: number of words in a gram.  
 				sentence_list: a list of all the sentences in the corpus
@@ -163,13 +164,16 @@ def generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences):
 
 
 		for i in range(sentence_list):
-			if len(sentence_list[i]) >= word_num:
+			if len(sentence_list[i]) >= word_pos:
 				count += 1
-				sum_start += -math.log(probs[sentence_list[word_num]])
-				sum_end += -math.log(probs[sentence[bleg]])
+				sum_start += -math.log(probs[i][word_pos])
+				sum_end += -math.log(probs[i][-word_pos])
+		return sum_start/count, sum_end/count
 
-			'''I'll count from the beginning and also from the end
-			you shouldn't average all of the fourth words together because sometimes those words are earlier in the sentence, sometimes later'''
+			# '''I'll count from the beginning and also from the end
+			# you shouldn't average all of the fourth words together because sometimes those words are earlier in the sentence, sometimes later
+
+			# divide by number of things summed'''
 
 
 
