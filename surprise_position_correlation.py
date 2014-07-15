@@ -4,6 +4,7 @@ corpus = "wikipedia2text-extracted.txt"
 import pdb
 from collections import Counter
 import math
+import itertools
 
 def main(n):
 	'''input: 
@@ -12,7 +13,7 @@ def main(n):
 	n_gram_list, n_grams_by_sentences = divide_into_grams(n,sentence_list)
 
 	#pdb.set_trace()
-	prob_list = generate_prob_list(n_gram_list, all_words)
+	all_probs = generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences)
 	pdb.set_trace()
 	avg_position_info = []
 	for word_num in range(max(len(sentence_list[:]))):
@@ -28,6 +29,7 @@ def divide_into_sentences():
 	all_words = []
 
 	for raw in crs:
+		raw = raw.lower()
 		sentence_list.extend(re.split('[!?.]', raw.strip()))
 	#sentence_list = [elm[:-1] for elm in sentence_list]
 	print sentence_list[:10]
@@ -90,23 +92,35 @@ def divide_into_grams(n,sentence_list):
 
 	return n_gram_list, n_grams_by_sentences
 
-	def generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences):
-		'''generate list of probabilities for words given the preceding word(s).  Each element is a list containing the probabilities for all words in the sentence'''
-		n_gram_freqs = Counter(n_gram_list)
-		word_freqs = Counter(all_words)
-		n_grams_unique = list(set(n_grams))
-
-		test_probs = []
-		for n_grams in n_grams_by_sentences:
-			prob_list = []
-			for n_gram in n_grams:
-				if n_gram < n:
-					n_gram_freqs[n_gram] += [1 for ng in n_gram_list if n_gram == ng[0:len(n_gram)] and len(ng) > len(n_gram)]
-				prob_list.append(n_gram_freqs[n_gram]/word_freqs[n_gram[1]])
+def generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences):
+	'''Generates a list of probabilities of each word given the preceding n-1 words. Alist of lists for each sentence. Each element in each inner list corresponds to the probability of that word given the preceding words.
+	'''
+	#counter cannot work with lists of lists, so I make lists strings
+	new_n_gram_list = [str(elm) for elm in n_gram_list]
+	n_gram_freqs = Counter(new_n_gram_list)
+	word_freqs = Counter(all_words)
+	n_grams_unique = list(n_grams_list)
+	n_grams_unique.sort()
+	n_grams_unique = list(gram for gram,_ in itertools.groupby(n_gram_list))
 
 
+		#list(frozenset(n_gram_list))
+
+	for ngram in n_grams_unique:
+		if len(n_gram) < n:
+			#print n_gram, str(n_gram), n_gram_freqs[str(n_gram)]
+			n_gram_freqs[str(n_gram)] = n_gram_freqs[str(n_gram)] + sum([1 for ng in n_gram_list if n_gram == ng[0:len(n_gram)] and len(ng) > len(n_gram)])
+
+	all_probs = []
+	for n_grams in n_grams_by_sentences:
+		prob_list = []
+		for n_gram in n_grams:
+			prob_list.append(float(n_gram_freqs[str(n_gram)])/word_freqs[n_gram[0]])
+		all_probs.append(prob_list)
 
 
+
+	pdb.set_trace()
 
 			# for word_num in range(len(word_list)):
 			# 	# n_gram = []
@@ -126,7 +140,7 @@ def divide_into_grams(n,sentence_list):
 			# 	else:
 			# 		#fix this line as wellsentence_
 			# 		prob_list.append(n_gram_freqs[sentence[word_num]]/word_freqs[sentence[word_num]])
-		return probs_list
+	return all_probs
 
 
 	def calc_avg_surprise(n, sentence_list, word_num, probs, n_grams_by_sentences):
@@ -160,4 +174,4 @@ def divide_into_grams(n,sentence_list):
 
 
 
-main(3)
+main(2)
