@@ -11,9 +11,9 @@ def main(n):
 	sentence_list, all_words = divide_into_sentences()
 	n_gram_list, n_grams_by_sentences = divide_into_grams(n,sentence_list)
 
-	pdb.set_trace()
+	#pdb.set_trace()
 	prob_list = generate_prob_list(n_gram_list, all_words)
-
+	pdb.set_trace()
 	avg_position_info = []
 	for word_num in range(max(len(sentence_list[:]))):
 		avg_position_info = calc_avg_surprise(sentence_list, word_num, probs)
@@ -85,27 +85,47 @@ def divide_into_grams(n,sentence_list):
 						break
 				n_gram_list.append(n_gram)
 		n_grams_by_sentences.append(n_gram_list)
-		#this isn't getting the things below the number
-		pdb.set_trace()
+	#	pdb.set_trace()
 	print 'helloooo'
 
 	return n_gram_list, n_grams_by_sentences
 
-	def generate_prob_list(n, n_gram_list, all_words):
+	def generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences):
 		'''generate list of probabilities for words given the preceding word(s).  Each element is a list containing the probabilities for all words in the sentence'''
 		n_gram_freqs = Counter(n_gram_list)
 		word_freqs = Counter(all_words)
+		n_grams_unique = list(set(n_grams))
 
 		test_probs = []
-		for sentence in sentence_list:
+		for n_grams in n_grams_by_sentences:
 			prob_list = []
-			for word_num in range(len(sentence)):
-				if word_num >= (n-1):
-					#fix the following line so that it loops through n times
-					prob_list.append(n_gram_freqs[sentence[word_num - 1]+' '+sentence[word_num]]/word_freqs[sentence[word_num]])
-				else:
-					#fix this line as well
-					prob_list.append(n_gram_freqs[sentence[word_num]]/word_freqs[sentence[word_num]])
+			for n_gram in n_grams:
+				if n_gram < n:
+					n_gram_freqs[n_gram] += [1 for ng in n_gram_list if n_gram == ng[0:len(n_gram)] and len(ng) > len(n_gram)]
+				prob_list.append(n_gram_freqs[n_gram]/word_freqs[n_gram[1]])
+
+
+
+
+
+			# for word_num in range(len(word_list)):
+			# 	# n_gram = []
+			# 	for num_prior in range(n):
+			# 		if num_prior <= word_num:
+			# 			if len(n_gram_list[])
+			# 			prob_list[sentence_ind].append(n_gram_freqs[sentence[word_num]])
+			# 			# n_gram.append(word_list[word_num - num_prior])
+			# 		else:
+			# 			break
+
+
+			# for word_num in range(len(sentence)):
+			# 	if word_num >= (n-1):
+			# 		#fix the following line so that it loops through n times
+			# 		prob_list.append(n_gram_freqs[sentence[word_num - 1]+' '+sentence[word_num]]/word_freqs[sentence[word_num]])
+			# 	else:
+			# 		#fix this line as wellsentence_
+			# 		prob_list.append(n_gram_freqs[sentence[word_num]]/word_freqs[sentence[word_num]])
 		return probs_list
 
 
@@ -140,4 +160,4 @@ def divide_into_grams(n,sentence_list):
 
 
 
-main(2)
+main(3)
