@@ -99,7 +99,7 @@ def generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences):
 	new_n_gram_list = [str(elm) for elm in n_gram_list]
 	n_gram_freqs = Counter(new_n_gram_list)
 	word_freqs = Counter(all_words)
-	n_grams_unique = list(n_grams_list)
+	n_grams_unique = list(n_gram_list)
 	n_grams_unique.sort()
 	n_grams_unique = list(gram for gram,_ in itertools.groupby(n_gram_list))
 
@@ -107,9 +107,9 @@ def generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences):
 		#list(frozenset(n_gram_list))
 
 	for ngram in n_grams_unique:
-		if len(n_gram) < n:
+		if len(ngram) < n:
 			#print n_gram, str(n_gram), n_gram_freqs[str(n_gram)]
-			n_gram_freqs[str(n_gram)] = n_gram_freqs[str(n_gram)] + sum([1 for ng in n_gram_list if n_gram == ng[0:len(n_gram)] and len(ng) > len(n_gram)])
+			n_gram_freqs[str(ngram)] = n_gram_freqs[str(ngram)] + sum([1 for ng in n_gram_list if ngram == ng[0:len(ngram)] and len(ng) > len(ngram)])
 
 	all_probs = []
 	for n_grams in n_grams_by_sentences:
