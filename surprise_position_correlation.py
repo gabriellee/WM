@@ -17,8 +17,20 @@ def main(n):
 	#pdb.set_trace()
 	avg_info_start = []
 	avg_info_end = []
-	for word_pos in range(max(len(sentence_list[:]))):
-		avg_info_start, avg_info_end = calc_avg_surprise(sentence_list, word_pos, all_probs)
+	#pdb.set_trace()
+	maxm = len(sentence_list[0].split())
+	maxm = [len(sentence_list[i].split()) for i in range(len(sentence_list)) if len(sentence_list[i].split()) > len(sentence_list[i-1].split())]
+	maxm = maxm[-1]
+	y_start = []
+	y_end = []
+	x = []
+	#pdb.set_trace()
+	for word_pos in range(maxm):
+		avg_info_start, avg_info_end = calc_avg_surprise(n, sentence_list, word_pos, all_probs, n_grams_by_sentences)
+		y_start.append(avg_info_start)
+		y_end.append(avg_info_end)
+		x.append(word_pos)
+	return x, y_start, y_end
 
 	#surprise_values = 
 
@@ -144,36 +156,37 @@ def generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences):
 	return all_probs
 
 
-	def calc_avg_surprise(n, sentence_list, word_pos, probs, n_grams_by_sentences):
-		'''input:
-				n: number of words in a gram.  
-				sentence_list: a list of all the sentences in the corpus
-				word_num:  the index, in the split up sentence(?), of the word whose information content is being examined
-				probs:  a dictionary containing the 
-		n_grams_by_sentences is a list with an element for each sentence.  Each element is a list of the n-grams in that sentence.
-		'''
-		count = 0
-		cumulative_sum = 0
+def calc_avg_surprise(n, sentence_list, word_pos, probs, n_grams_by_sentences):
+	'''input:
+			n: number of words in a gram.  
+			sentence_list: a list of all the sentences in the corpus
+			word_num:  the index, in the split up sentence(?), of the word whose information content is being examined
+			probs:  a dictionary containing the 
+	n_grams_by_sentences is a list with an element for each sentence.  Each element is a list of the n-grams in that sentence.
+	'''
+	count = 0
+	cumulative_sum = 0
 
-		#debugging
-		if len(sentence_list) != len(n_grams_by_sentences):
-			pdb.set_trace()
+	#debugging
+	if len(sentence_list) != len(n_grams_by_sentences):
+		pdb.set_trace()
 
-		#get probs
+	#get probs
 
+	sum_start = 0
+	sum_end = 0
 
+	for i in range(len(sentence_list)):
+		if len(sentence_list[i]) >= word_pos:
+			count += 1
+			sum_start += -math.log(probs[i][word_pos])
+			sum_end += -math.log(probs[i][-word_pos])
+	return sum_start/count, sum_end/count
 
-		for i in range(sentence_list):
-			if len(sentence_list[i]) >= word_pos:
-				count += 1
-				sum_start += -math.log(probs[i][word_pos])
-				sum_end += -math.log(probs[i][-word_pos])
-		return sum_start/count, sum_end/count
+		# '''I'll count from the beginning and also from the end
+		# you shouldn't average all of the fourth words together because sometimes those words are earlier in the sentence, sometimes later
 
-			# '''I'll count from the beginning and also from the end
-			# you shouldn't average all of the fourth words together because sometimes those words are earlier in the sentence, sometimes later
-
-			# divide by number of things summed'''
+		# divide by number of things summed'''
 
 
 
