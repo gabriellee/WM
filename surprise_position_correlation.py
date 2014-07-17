@@ -4,16 +4,33 @@ corpus = "wikipedia2text-extracted.txt"
 import pdb
 from collections import Counter
 import math
+from joblib import Parallel, delayed
 import itertools
+import time
+from nltk.util import ngrams
 
 def main(n):
 	'''input: 
 			n: the number of loop through every first word, determine how surprising each set of words is.  Then determine the probability of surprise by position'''
+	start_time = time.time()
+	print start_time
+
 	sentence_list, all_words = divide_into_sentences()
+
+	time1 = time.time() - start_time
+	print str(time1) + " time to divide into sentences"
+	
 	n_gram_list, n_grams_by_sentences = divide_into_grams(n,sentence_list)
 
+	time2 = time.time() - time1
+	print str(time2) + " time to divide into grams"
+
 	#pdb.set_trace()
-	all_probs = generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences)
+	all_probs = generate_prob_list(n, n_gram_list, n_grams_by_sentences, all_words)
+
+	time3 = time.time() - time2
+	print str(time3) + " time to generate probability list"
+
 	#pdb.set_trace()
 	avg_info_start = []
 	avg_info_end = []
@@ -45,21 +62,21 @@ def divide_into_sentences():
 		raw = raw.lower()
 		sentence_list.extend(re.split('[!?.]', raw.strip()))
 	#sentence_list = [elm[:-1] for elm in sentence_list]
-	print sentence_list[:10]
-	sentence_list = sentence_list[:10]
+	#print sentence_list[:10]
+	#sentence_list = sentence_list[:10]
 	for ind in range(len(sentence_list)):
 		sentence_list[ind].lower()
 		sentence_list[ind] = re.sub(r'\([^)]*\)','',sentence_list[ind])
 		sentence_list[ind] = re.sub(r'\"[^"]*\"','',sentence_list[ind])
 		all_words.extend(sentence_list[ind].split())
-	print "length of all_words " + str(len(all_words))
+	#print "length of all_words " + str(len(all_words))
 	#print sentence_list
 #	pdb.set_trace()
 
 	#pdb.set_trace()
-	sentence_list = [sentence for sentence in sentence_list if sentence != '']
+	sentence_list = [sentence for sentence in sentence_list if sentence != '' and sentence != ' ' and len(sentence.split()) > 1]
 	#print sentence_list
-	#sentence_list =  sentence_list[:10]
+	sentence_list =  sentence_list[:10000]
 	return sentence_list, all_words
 
 
@@ -74,40 +91,57 @@ def divide_into_grams(n,sentence_list):
 	n_grams_by_sentences = []
 	n_gram_list = []
 
-	for sentence in sentence_list:
-		print 'mew!'
-		if type(sentence) != 'string':
-			print sentence
-		word_list = []
-		n_gram = []
-		#print sentence
-		print "current sentence is " + str(sentence)
-		word_list = sentence.split()
+	# timea = time.time()
+	# g = [ngrams(sentence.split(), n) for sentence in sentence_list[:10]]
+	# timeb = time.time()
+	# print timeb-timea
+	# print len(sentence_list)
+	# print (timeb - timea)*(len(sentence_list)/10)
+	# pdb.set_trace()
+	timea = time.time()
+	#g = [ngrams(sentence.split(), n) for sentence in sentence_list[0:50000]]
+	n_grams_by_sentences = Parallel(n_jobs=2)(delayed(ngrams)(sentence.split(), n) for sentence in sentence_list)
+	#collect the words with fewer than n-1 words preceding them
+	n_grams_by_sentences = [n_grams_by_sentences[i] for i in range(len(n_grams_by_sentences)) if n_grams_by_sentences[i]]
+	split_sentences = [sentence.split() for sentence in sentence_list]
+	split_sentences = [split_sentences[k] for k in range(len(split_sentences)) if split_sentences[k]]
+
+	for j in range(n-1):
+		for i in range(len(sentence_list)):
+			n_grams_by_sentences[i] = [split_sentences[i][j:n-1]] + n_grams_by_sentences[i]
+		#pdb.set_trace()
+		#n_gram_list.append([word_in_sen[0] for word_in_sen in split_sentences])
+		#n_gram_list = [sentence.split()[j] for sentence in sentence_list]
+	print time.time() - timea
+	#pdb.set_trace()
+	n_gram_list = [item for sublist in n_grams_by_sentences for item in sublist]
+
+#	n_gram_list = [ngrams(sentence.split(), n) for sentence in sentence_list]
+	#for sentence in sentence_list:
+
+		# word_list = []
+		# n_gram = []
+		# #print sentence
+		# #print "current sentence is " + str(sentence)
+		# word_list = sentence.split()
+
 		# if len(sentence) > n:
-		# 	for start_ind in range(len(word_list[:-n])):
+		# 	for word_num in range(len(word_list)):
 		# 		n_gram = []
-		# 		for word_num in range(n):
-		# 			n_gram.append(word_list[start_ind + word_num])
+		# 		for num_prior in range(n):
+		# 			if num_prior <= word_num:
+		# 				n_gram.append(word_list[word_num - num_prior])
+		# 			else:
+		# 				break
 		# 		n_gram_list.append(n_gram)
 		# n_grams_by_sentences.append(n_gram_list)
-		if len(sentence) > n:
-			for word_num in range(len(word_list)):
-				n_gram = []
-				for num_prior in range(n):
-					if num_prior <= word_num:
-						n_gram.append(word_list[word_num - num_prior])
-					else:
-						break
-				n_gram_list.append(n_gram)
-		n_grams_by_sentences.append(n_gram_list)
-	#	pdb.set_trace()
-	print 'helloooo'
+
 
 	return n_gram_list, n_grams_by_sentences
 
 def generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences):
-	'''Generates a list of probabilities of each word given the preceding n-1 words. Alist of lists for each sentence. Each element in each inner list corresponds to the probability of that word given the preceding words.
-	'''
+	'''Generates a list of probabilities of each word given the preceding n-1 words. A list of lists for each sentence. Each element in each inner list corresponds to the probability of that word given the preceding words.
+	Generates a dictionary in which each ngram maps to a probability'''
 	#counter cannot work with lists of lists, so I make lists strings
 	new_n_gram_list = [str(elm) for elm in n_gram_list]
 	n_gram_freqs = Counter(new_n_gram_list)
