@@ -7,6 +7,8 @@ import math
 from joblib import Parallel, delayed
 import itertools
 import time
+import pickle
+import csv
 from nltk.util import ngrams
 
 def main(n):
@@ -15,7 +17,11 @@ def main(n):
 	start_time = time.time()
 	print start_time
 
+	w = csv.writer(open("output.csv", "w"))
+
+
 	sentence_list, all_words = divide_into_sentences()
+	#pdb.set_trace()
 
 	time1 = time.time() - start_time
 	print str(time1) + " time to divide into sentences"
@@ -26,7 +32,7 @@ def main(n):
 	print str(time2) + " time to divide into grams"
 
 	#pdb.set_trace()
-	all_probs = generate_prob_list(n, n_gram_list, n_grams_by_sentences, all_words)
+	# all_probs = generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences)
 
 	time3 = time.time() - time2
 	print str(time3) + " time to generate probability list"
@@ -41,12 +47,16 @@ def main(n):
 	y_start = []
 	y_end = []
 	x = []
+	all_probs = dict()
 	#pdb.set_trace()
 	for word_pos in range(maxm):
-		avg_info_start, avg_info_end = calc_avg_surprise(n, sentence_list, word_pos, all_probs, n_grams_by_sentences)
+		avg_info_start, avg_info_end, all_probs = calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_list, all_probs, all_words)
 		y_start.append(avg_info_start)
 		y_end.append(avg_info_end)
 		x.append(word_pos)
+	w.writerow(y_end)
+	w.writerow(y_start)
+	w.writerow(x)
 	return x, y_start, y_end
 
 	#surprise_values = 
@@ -110,7 +120,6 @@ def divide_into_grams(n,sentence_list):
 		for i in range(len(sentence_list)):
 			n_grams_by_sentences[i] = [split_sentences[i][j:n-1]] + n_grams_by_sentences[i]
 		#pdb.set_trace()
-		#n_gram_list.append([word_in_sen[0] for word_in_sen in split_sentences])
 		#n_gram_list = [sentence.split()[j] for sentence in sentence_list]
 	print time.time() - timea
 	#pdb.set_trace()
@@ -156,6 +165,7 @@ def generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences):
 	for ngram in n_grams_unique:
 		if len(ngram) < n:
 			#print n_gram, str(n_gram), n_gram_freqs[str(n_gram)]
+			#if you have a short ngram, count grams that include it at the beginning as adding to its frequency
 			n_gram_freqs[str(ngram)] = n_gram_freqs[str(ngram)] + sum([1 for ng in n_gram_list if ngram == ng[0:len(ngram)] and len(ng) > len(ngram)])
 
 	all_probs = []
@@ -190,7 +200,7 @@ def generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences):
 	return all_probs
 
 
-def calc_avg_surprise(n, sentence_list, word_pos, probs, n_grams_by_sentences):
+def calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_list, probs, all_words):
 	'''input:
 			n: number of words in a gram.  
 			sentence_list: a list of all the sentences in the corpus
@@ -198,7 +208,9 @@ def calc_avg_surprise(n, sentence_list, word_pos, probs, n_grams_by_sentences):
 			probs:  a dictionary containing the 
 	n_grams_by_sentences is a list with an element for each sentence.  Each element is a list of the n-grams in that sentence.
 	'''
-	count = 0
+	print 'calculating probability of surprise given position'
+	count_end = 0
+	count_start = 0
 	cumulative_sum = 0
 
 	#debugging
@@ -209,13 +221,67 @@ def calc_avg_surprise(n, sentence_list, word_pos, probs, n_grams_by_sentences):
 
 	sum_start = 0
 	sum_end = 0
+	#loop through sentences and check the info of a word at a given distance from start and end
+	#first check whether it already knows the probability, otherwise, compute it and add it to a dict
+	probs = dict()
+	new_n_gram_list = [str(elm) for elm in n_gram_list]
+	#n_gram_freqs = Counter(new_n_gram_list)
+	word_freqs = Counter(all_words)
+	n_grams_unique = list(n_gram_list)
+	n_grams_unique.sort()
+	n_grams_unique = list(gram for gram,_ in itertools.groupby(n_gram_list))
+	#print time.time()
+	#if you have a short ngram, count grams that include it at the beginning as adding to its frequency
+	n_gram_freqs = {}
+	for ng in n_gram_list:
+		for i in range(len(ng)):
+			current = n_gram_freqs.get(str(list(ng[0:i+1])),0)
+			n_gram_freqs[str(list(ng[0:i+1]))] = current + 1
+	#pdb.set_trace()
 
+#	n_gram_freqs[str(ngram)] = [n_gram_freqs[str(ngram)] + sum([1 for ng in n_gram_list if ngram == ng[0:len(ngram)] and len(ng) > len(ngram)]) for ngram in n_grams_unique if len(ngram) < n]
+	print time.time()
+	# for ngram in n_grams_unique:
+	# 	if len(ngram) < n:
+	# 		#print n_gram, str(n_gram), n_gram_freqs[str(n_gram)]
+	# 		n_gram_freqs[str(ngram)] = n_gram_freqs[str(ngram)] + sum([1 for ng in n_gram_list if ngram == ng[0:len(ngram)] and len(ng) > len(ngram)])
+
+	#loops through each sentence, then through each n
 	for i in range(len(sentence_list)):
-		if len(sentence_list[i]) >= word_pos:
-			count += 1
-			sum_start += -math.log(probs[i][word_pos])
-			sum_end += -math.log(probs[i][-word_pos])
-	return sum_start/count, sum_end/count
+		#print "loop da loop" +str(time.time())
+		print word_pos, i
+		if len(sentence_list[i].split()) - 1 >= word_pos:
+			#pdb.set_trace()
+			if str(list(n_grams_by_sentences[i][word_pos])) in probs:
+				#if str(n_grams_by_sentences[i][-word_pos]) == '(\'"covert\', \'propaganda\')':
+					#print word_pos, i
+					#print n_grams_by_sentences[i][word_pos]
+					#pdb.set_trace()
+				sum_start += -math.log(probs[str(list(n_grams_by_sentences[i][word_pos]))])
+				count_start += 1
+			else:
+				#pdb.set_trace()
+				probs[str(list(n_grams_by_sentences[i][word_pos]))] = float(n_gram_freqs[str(list(n_grams_by_sentences[i][word_pos]))])/word_freqs[n_grams_by_sentences[i][word_pos][-1]]#the las word in the gram
+			if str(list(n_grams_by_sentences[i][-word_pos])) in probs:
+				sum_end += -math.log(probs[str(list(n_grams_by_sentences[i][-word_pos]))])
+				count_end += 1
+			else:
+				probs[str(list(n_grams_by_sentences[i][-word_pos]))] = float(n_gram_freqs[str(list(n_grams_by_sentences[i][word_pos]))])/word_freqs[n_grams_by_sentences[i][word_pos][-1]]#the las word in the gram
+
+
+				
+
+
+	# for i in range(len(sentence_list)):
+	# 	if len(sentence_list[i]) >= word_pos:
+	# 		count += 1
+	# 		print i
+	# 		if i == 100:
+	# 			print i
+	# 			#pdb.set_trace()
+	# 		sum_start += -math.log(probs[i][word_pos])
+	# 		sum_end += -math.log(probs[i][-word_pos])
+	return sum_start/count_start, sum_end/count_end, probs
 
 		# '''I'll count from the beginning and also from the end
 		# you shouldn't average all of the fourth words together because sometimes those words are earlier in the sentence, sometimes later
@@ -225,4 +291,4 @@ def calc_avg_surprise(n, sentence_list, word_pos, probs, n_grams_by_sentences):
 
 
 
-main(2)
+#main(2)
