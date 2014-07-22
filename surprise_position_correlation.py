@@ -9,6 +9,7 @@ import itertools
 import time
 import pickle
 import csv
+from random import shuffle
 from nltk.util import ngrams
 
 def main(n):
@@ -17,7 +18,7 @@ def main(n):
 	start_time = time.time()
 	print start_time
 
-	w = csv.writer(open("output.csv", "w"))
+	w = csv.writer(open("pos_info_30000sentences.csv", "w"))
 
 
 	sentence_list, all_words = divide_into_sentences()
@@ -85,8 +86,9 @@ def divide_into_sentences():
 
 	#pdb.set_trace()
 	sentence_list = [sentence for sentence in sentence_list if sentence != '' and sentence != ' ' and len(sentence.split()) > 1]
+	sentence_list = shuffle(sentence_list)
 	#print sentence_list
-	sentence_list =  sentence_list[:10000]
+	sentence_list =  sentence_list[:30000]
 	return sentence_list, all_words
 
 
@@ -249,7 +251,7 @@ def calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_l
 	#loops through each sentence, then through each n
 	for i in range(len(sentence_list)):
 		#print "loop da loop" +str(time.time())
-		print word_pos, i
+		#print word_pos, i
 		if len(sentence_list[i].split()) - 1 >= word_pos:
 			#pdb.set_trace()
 			if str(list(n_grams_by_sentences[i][word_pos])) in probs:
@@ -291,4 +293,4 @@ def calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_l
 
 
 
-#main(2)
+main(2)
