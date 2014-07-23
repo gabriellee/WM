@@ -9,6 +9,7 @@ import itertools
 import time
 import pickle
 import csv
+from nltk.corpus import brown
 from random import shuffle
 from nltk.util import ngrams
 
@@ -18,11 +19,21 @@ def main(n):
 	start_time = time.time()
 	print start_time
 
-	w = csv.writer(open("pos_info_30000sentences.csv", "w"))
+	w = csv.writer(open("pos_info_3_word_sents.csv", "w"))
 
 
-	sentence_list, all_words = divide_into_sentences()
+	#sentence_list, all_words = divide_into_sentences()
 	#pdb.set_trace()
+	sentence_list = list(brown.sents())
+	all_words = brown.words()
+	sentence_list = [list(sent) for sent in sentence_list]
+
+	for i in range(len(sentence_list)):
+		sentence_list[i] = filter(lambda a: a != ',' and a != '``' and a != '\'\'' and a != '.' and a != '(' and a != ')' and a != '?' and a != '!', sentence_list[i]) 
+	#pdb.set_trace()
+
+	sentence_list = [sent for sent in sentence_list if len(sent) == 3]
+
 
 	time1 = time.time() - start_time
 	print str(time1) + " time to divide into sentences"
@@ -42,9 +53,10 @@ def main(n):
 	avg_info_start = []
 	avg_info_end = []
 	#pdb.set_trace()
-	maxm = len(sentence_list[0].split())
-	maxm = [len(sentence_list[i].split()) for i in range(len(sentence_list)) if len(sentence_list[i].split()) > len(sentence_list[i-1].split())]
-	maxm = maxm[-1]
+	maxm = len(sentence_list[0])
+	for i in range(len(sentence_list)):
+		if len(sentence_list[i]) > maxm:
+			maxm = len(sentence_list[i])
 	y_start = []
 	y_end = []
 	x = []
@@ -88,6 +100,7 @@ def divide_into_sentences():
 	sentence_list = [sentence for sentence in sentence_list if sentence != '' and sentence != ' ' and len(sentence.split()) > 1]
 	shuffle(sentence_list)
 	#print sentence_list
+	sentence_list  = [sen for sen in sentence_list if len(sen.split()) == 3]
 	sentence_list =  sentence_list[:30000]
 	return sentence_list, all_words
 
@@ -103,49 +116,24 @@ def divide_into_grams(n,sentence_list):
 	n_grams_by_sentences = []
 	n_gram_list = []
 
-	# timea = time.time()
-	# g = [ngrams(sentence.split(), n) for sentence in sentence_list[:10]]
-	# timeb = time.time()
-	# print timeb-timea
-	# print len(sentence_list)
-	# print (timeb - timea)*(len(sentence_list)/10)
-	# pdb.set_trace()
+
 	timea = time.time()
-	#g = [ngrams(sentence.split(), n) for sentence in sentence_list[0:50000]]
-	n_grams_by_sentences = Parallel(n_jobs=2)(delayed(ngrams)(sentence.split(), n) for sentence in sentence_list)
+	n_grams_by_sentences = Parallel(n_jobs=2)(delayed(ngrams)(sentence, n) for sentence in sentence_list)
 	#collect the words with fewer than n-1 words preceding them
-	n_grams_by_sentences = [n_grams_by_sentences[i] for i in range(len(n_grams_by_sentences)) if n_grams_by_sentences[i]]
-	split_sentences = [sentence.split() for sentence in sentence_list]
-	split_sentences = [split_sentences[k] for k in range(len(split_sentences)) if split_sentences[k]]
+	# n_grams_by_sentences = [n_grams_by_sentences[i] for i in range(len(n_grams_by_sentences)) if n_grams_by_sentences[i]]
+	# split_sentences = [sentence.split() for sentence in sentence_list]
+	# split_sentences = [split_sentences[k] for k in range(len(split_sentences)) if split_sentences[k]]
 
 	for j in range(n-1):
 		for i in range(len(sentence_list)):
-			n_grams_by_sentences[i] = [split_sentences[i][j:n-1]] + n_grams_by_sentences[i]
+			n_grams_by_sentences[i] = [sentence_list[i][j:n-1]] + n_grams_by_sentences[i]
 		#pdb.set_trace()
 		#n_gram_list = [sentence.split()[j] for sentence in sentence_list]
 	print time.time() - timea
 	#pdb.set_trace()
 	n_gram_list = [item for sublist in n_grams_by_sentences for item in sublist]
 
-#	n_gram_list = [ngrams(sentence.split(), n) for sentence in sentence_list]
-	#for sentence in sentence_list:
 
-		# word_list = []
-		# n_gram = []
-		# #print sentence
-		# #print "current sentence is " + str(sentence)
-		# word_list = sentence.split()
-
-		# if len(sentence) > n:
-		# 	for word_num in range(len(word_list)):
-		# 		n_gram = []
-		# 		for num_prior in range(n):
-		# 			if num_prior <= word_num:
-		# 				n_gram.append(word_list[word_num - num_prior])
-		# 			else:
-		# 				break
-		# 		n_gram_list.append(n_gram)
-		# n_grams_by_sentences.append(n_gram_list)
 
 
 	return n_gram_list, n_grams_by_sentences
@@ -178,27 +166,6 @@ def generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences):
 		all_probs.append(prob_list)
 
 
-
-	#pdb.set_trace()
-
-			# for word_num in range(len(word_list)):
-			# 	# n_gram = []
-			# 	for num_prior in range(n):
-			# 		if num_prior <= word_num:
-			# 			if len(n_gram_list[])
-			# 			prob_list[sentence_ind].append(n_gram_freqs[sentence[word_num]])
-			# 			# n_gram.append(word_list[word_num - num_prior])
-			# 		else:
-			# 			break
-
-
-			# for word_num in range(len(sentence)):
-			# 	if word_num >= (n-1):
-			# 		#fix the following line so that it loops through n times
-			# 		prob_list.append(n_gram_freqs[sentence[word_num - 1]+' '+sentence[word_num]]/word_freqs[sentence[word_num]])
-			# 	else:
-			# 		#fix this line as wellsentence_
-			# 		prob_list.append(n_gram_freqs[sentence[word_num]]/word_freqs[sentence[word_num]])
 	return all_probs
 
 
@@ -243,16 +210,12 @@ def calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_l
 
 #	n_gram_freqs[str(ngram)] = [n_gram_freqs[str(ngram)] + sum([1 for ng in n_gram_list if ngram == ng[0:len(ngram)] and len(ng) > len(ngram)]) for ngram in n_grams_unique if len(ngram) < n]
 	print time.time()
-	# for ngram in n_grams_unique:
-	# 	if len(ngram) < n:
-	# 		#print n_gram, str(n_gram), n_gram_freqs[str(n_gram)]
-	# 		n_gram_freqs[str(ngram)] = n_gram_freqs[str(ngram)] + sum([1 for ng in n_gram_list if ngram == ng[0:len(ngram)] and len(ng) > len(ngram)])
-
+	
 	#loops through each sentence, then through each n
 	for i in range(len(sentence_list)):
 		#print "loop da loop" +str(time.time())
 		#print word_pos, i
-		if len(sentence_list[i].split()) - 1 >= word_pos:
+		if len(sentence_list[i]) - 1 >= word_pos:
 			#pdb.set_trace()
 			if str(list(n_grams_by_sentences[i][word_pos])) in probs:
 				#if str(n_grams_by_sentences[i][-word_pos]) == '(\'"covert\', \'propaganda\')':
@@ -271,24 +234,9 @@ def calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_l
 				probs[str(list(n_grams_by_sentences[i][-word_pos]))] = float(n_gram_freqs[str(list(n_grams_by_sentences[i][word_pos]))])/word_freqs[n_grams_by_sentences[i][word_pos][-1]]#the las word in the gram
 
 
-				
 
-
-	# for i in range(len(sentence_list)):
-	# 	if len(sentence_list[i]) >= word_pos:
-	# 		count += 1
-	# 		print i
-	# 		if i == 100:
-	# 			print i
-	# 			#pdb.set_trace()
-	# 		sum_start += -math.log(probs[i][word_pos])
-	# 		sum_end += -math.log(probs[i][-word_pos])
 	return sum_start/count_start, sum_end/count_end, probs
 
-		# '''I'll count from the beginning and also from the end
-		# you shouldn't average all of the fourth words together because sometimes those words are earlier in the sentence, sometimes later
-
-		# divide by number of things summed'''
 
 
 
