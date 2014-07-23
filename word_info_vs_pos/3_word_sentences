@@ -52,6 +52,8 @@ def main(n):
 	#pdb.set_trace()
 	avg_info_start = []
 	avg_info_end = []
+	all_info_values = []
+	positions =[]
 	#pdb.set_trace()
 	maxm = len(sentence_list[0])
 	for i in range(len(sentence_list)):
@@ -63,13 +65,17 @@ def main(n):
 	all_probs = dict()
 	#pdb.set_trace()
 	for word_pos in range(maxm):
-		avg_info_start, avg_info_end, all_probs = calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_list, all_probs, all_words)
+		avg_info_start, avg_info_end, all_probs, info_values, pos_list = calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_list, all_probs, all_words)
 		y_start.append(avg_info_start)
 		y_end.append(avg_info_end)
 		x.append(word_pos)
+		all_info_values.extend(info_values)
+		positions.extend(pos_list)
 	w.writerow(y_end)
 	w.writerow(y_start)
 	w.writerow(x)
+	w.writerow(all_info_values)
+	w.writerow(positions)
 	return x, y_start, y_end
 
 	#surprise_values = 
@@ -170,38 +176,36 @@ def generate_prob_list(n, n_gram_list, all_words, n_grams_by_sentences):
 
 
 def calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_list, probs, all_words):
-		'''input:
-				n: number of words in a gram.
-				sentence_list: a list of all the sentences in the corpus. Within each list is a list of words in that sentence.
-				word_pos: specifies which words are being examined. The number of words into the sentence that the word is. In the sentence, "The dog ran so fast.," if word_pos equals 2, We are looking at "dog" and "so".
-				probs: a dictionary containing the probabilities of a word given the preceding word
-				n_grams_by_sentences is a list with an element for each sentence. Each element is a list of the n-grams in that sentence.
+	'''input:
+			n: number of words in a gram.
+			sentence_list: a list of all the sentences in the corpus. Within each list is a list of words in that sentence.
+			word_pos: specifies which words are being examined. The number of words into the sentence that the word is. In the sentence, "The dog ran so fast.," if word_pos equals 2, We are looking at "dog" and "so".
+			probs: a dictionary containing the probabilities of a word given the preceding word
+			n_grams_by_sentences is a list with an element for each sentence. Each element is a list of the n-grams in that sentence.
 
-			Runtime:
-				sum_start: the sum of information values for all words at word_pos in each sentence.
-				sum_end: the sum of information values for all words at -word_pos in each sentence.
-				'''
+		Runtime:
+			sum_start: the sum of information values for all words at word_pos in each sentence.
+			sum_end: the sum of information values for all words at -word_pos in each sentence.
+	'''
 	print 'calculating probability of surprise given position'
 	count_end = 0
 	count_start = 0
 	cumulative_sum = 0
 
-	#debugging
-	if len(sentence_list) != len(n_grams_by_sentences):
-		pdb.set_trace()
-
-	#get probs
 
 	sum_start = 0
 	sum_end = 0
+	info_values = []
+	pos_list = []
 	probs = dict()
 	new_n_gram_list = [str(elm) for elm in n_gram_list]
-	#n_gram_freqs = Counter(new_n_gram_list)
 	word_freqs = Counter(all_words)
 	n_grams_unique = list(n_gram_list)
 	n_grams_unique.sort()
 	n_grams_unique = list(gram for gram,_ in itertools.groupby(n_gram_list))
 	#print time.time()
+
+	#Create dictionary of ngram frequencies
 	#if you have a short ngram, count grams that include it at the beginning as adding to its frequency
 	n_gram_freqs = {}
 	for ng in n_gram_list:
@@ -217,17 +221,21 @@ def calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_l
 	#loops through each sentence, collecting information values for words at word_pos from the beginning and end of the sentence
 	#when it calculate information value, it checks whether the probability of seeing that word given the preceding word is already known
 	#if it is known, it uses that probability to calculate the average surprise value. Otherwise it calculates that probability, stores it in a dictionary, and uses it to calculate the surprise value.
-for i in range(len(sentence_list)):	for i in range(len(sentence_list)):
+	for i in range(len(sentence_list)):
 		#print "loop da loop" +str(time.time())
 		#print word_pos, i
 		if len(sentence_list[i]) - 1 >= word_pos:
 			if str(list(n_grams_by_sentences[i][word_pos])) in probs:
 				sum_start += -math.log(probs[str(list(n_grams_by_sentences[i][word_pos]))])
 				count_start += 1
+				info_values.append(-math.log(probs[str(list(n_grams_by_sentences[i][word_pos]))]))
+				pos_list.append(word_pos)
 			else:
 				probs[str(list(n_grams_by_sentences[i][word_pos]))] = float(n_gram_freqs[str(list(n_grams_by_sentences[i][word_pos]))])/word_freqs[n_grams_by_sentences[i][word_pos][-1]]#the las word in the gram
 				sum_start += -math.log(probs[str(list(n_grams_by_sentences[i][word_pos]))])
 				count_start += 1
+				info_values.append(-math.log(probs[str(list(n_grams_by_sentences[i][word_pos]))]))
+				pos_list.append(word_pos)
 
 
 			if str(list(n_grams_by_sentences[i][-word_pos])) in probs:
@@ -240,7 +248,7 @@ for i in range(len(sentence_list)):	for i in range(len(sentence_list)):
 
 
 
-	return sum_start/count_start, sum_end/count_end, probs
+	return sum_start/count_start, sum_end/count_end, probs, info_values, pos_list
 
 
 
