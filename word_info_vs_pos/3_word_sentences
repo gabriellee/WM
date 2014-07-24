@@ -19,7 +19,7 @@ def main(n):
 	start_time = time.time()
 	print start_time
 
-	w = csv.writer(open("pos_info_3_word_sents.csv", "w"))
+	w = csv.writer(open("pos_info_4_word_sents.csv", "w"))
 
 
 	#sentence_list, all_words = divide_into_sentences()
@@ -32,7 +32,7 @@ def main(n):
 		sentence_list[i] = filter(lambda a: a != ',' and a != '``' and a != '\'\'' and a != '.' and a != '(' and a != ')' and a != '?' and a != '!', sentence_list[i]) 
 	#pdb.set_trace()
 
-	sentence_list = [sent for sent in sentence_list if len(sent) == 3]
+	sentence_list = [sent for sent in sentence_list if len(sent) == 4]
 
 
 	time1 = time.time() - start_time
@@ -69,12 +69,13 @@ def main(n):
 		y_start.append(avg_info_start)
 		y_end.append(avg_info_end)
 		x.append(word_pos)
-		all_info_values.extend(info_values)
+		#all_info_values.extend(info_values)
+		w.writerow(info_values)
 		positions.extend(pos_list)
 	w.writerow(y_end)
 	w.writerow(y_start)
 	w.writerow(x)
-	w.writerow(all_info_values)
+	#w.writerow(all_info_values)
 	w.writerow(positions)
 	return x, y_start, y_end
 
@@ -238,20 +239,18 @@ def calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_l
 				pos_list.append(word_pos)
 
 
-			if str(list(n_grams_by_sentences[i][-word_pos])) in probs:
-				sum_end += -math.log(probs[str(list(n_grams_by_sentences[i][-word_pos]))])
+			if str(list(n_grams_by_sentences[i][-word_pos-1])) in probs:
+				sum_end += -math.log(probs[str(list(n_grams_by_sentences[i][-word_pos-1]))])
 				count_end += 1
 			else:
-				probs[str(list(n_grams_by_sentences[i][-word_pos]))] = float(n_gram_freqs[str(list(n_grams_by_sentences[i][word_pos]))])/word_freqs[n_grams_by_sentences[i][word_pos][-1]]#the las word in the gram
-				sum_end += -math.log(probs[str(list(n_grams_by_sentences[i][-word_pos]))])
+				probs[str(list(n_grams_by_sentences[i][-word_pos-1]))] = float(n_gram_freqs[str(list(n_grams_by_sentences[i][-word_pos-1]))])/word_freqs[n_grams_by_sentences[i][-word_pos-1][-1]]#the las word in the gram
+				sum_end += -math.log(probs[str(list(n_grams_by_sentences[i][-word_pos-1]))])
 				count_end += 1
-
-
-
+	print "hello"
 	return sum_start/count_start, sum_end/count_end, probs, info_values, pos_list
 
 
 
 
 
-main(2)
+main(1)
