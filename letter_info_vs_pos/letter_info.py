@@ -185,8 +185,9 @@ def calc_avg_surprise(n, all_words, letter_pos, n_grams_by_words, n_gram_list, p
 				pos_list.append(letter_pos)
 
 
-			if str(list(n_grams_by_words[i][-letter_pos])) in probs:
-				sum_end += -math.log(probs[str(n_grams_by_words[i][-letter_pos - 1])])
+			if str(list(n_grams_by_words[i][-letter_pos - 1])) in probs:
+				#pdb.set_trace()
+				sum_end += -math.log(probs[str(list(n_grams_by_words[i][-letter_pos - 1]))])
 				count_end += 1
 			else:
 				probs[str(list(n_grams_by_words[i][-letter_pos - 1]))] = float(n_gram_freqs[str(list(n_grams_by_words[i][-letter_pos - 1]))])/letter_freqs[n_grams_by_words[i][-letter_pos - 1][-1]]#the las letter in the gram
