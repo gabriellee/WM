@@ -19,7 +19,7 @@ def main(n):
 	start_time = time.time()
 	print start_time
 
-	w = csv.writer(open("pos_info_letters.csv", "w"))
+	w = csv.writer(open("pos_info_letters_tri.csv", "w"))
 
 
 	#sentence_list, all_words = divide_into_sentences()
@@ -28,10 +28,11 @@ def main(n):
 	all_words = brown.words()
 	#pdb.set_trace()
 	#all_letters = [list(word) for word in all_words]
-	all_words = [list(word) for word in all_words]
+	all_words = [list(word) for word in all_words if word != ',' and word != '.' and word != '?' and word != '!' and word != []]
 	shuffle(all_words)
 
 	#shorten the list to decrease computational load
+	#all_words = [all_words[d] for d in range(len(all_words)) if len(all_words[d]) == 3]
 	all_words = all_words[:10000]
 	all_letters = itertools.chain.from_iterable(all_words)
 	all_letters = list(all_letters)
@@ -96,7 +97,7 @@ def divide_into_grams(n,all_words):
 	#split into sentences, then make lists of n-grams from the sentences, it should loop through len(sentences)-n, if that value is negative, skip
 	n_grams_by_words = []
 	n_gram_list = []
-
+	gram_dict = dict()
 
 	timea = time.time()
 	n_grams_by_words = Parallel(n_jobs=2)(delayed(ngrams)(word, n) for word in all_words)
@@ -105,14 +106,23 @@ def divide_into_grams(n,all_words):
 	# split_sentences = [sentence.split() for sentence in sentence_list]
 	# split_sentences = [split_sentences[k] for k in range(len(split_sentences)) if split_sentences[k]]
 
-	for j in range(n-1):
-		for i in range(len(all_words)):
-			n_grams_by_words[i] = [all_words[i][j:n-1]] + n_grams_by_words[i]
-		#pdb.set_trace()
-		#n_gram_list = [sentence.split()[j] for sentence in sentence_list]
+	#removes empty lists
+	for word_grams in n_grams_by_words:
+		word_grams = [x for x in word_grams if x]
+
+	#add grams shorter than n
+	for i in range(len(all_words)):
+		if str(all_words[i]) in gram_dict:
+			n_grams_by_words[i] = gram_dict[str(all_words[i])]
+		else:
+			for j in range(n-2,-1, -1):
+				n_grams_by_words[i] = [tuple(all_words[i][0:j+1])] + n_grams_by_words[i]
+			gram_dict[str(all_words[i])] = n_grams_by_words[i]
+			#print j, n_grams_by_words[i]
+
 	print time.time() - timea
-	#pdb.set_trace()
 	n_gram_list = [item for sublist in n_grams_by_words for item in sublist]
+	#pdb.set_trace()
 
 
 
@@ -171,13 +181,15 @@ def calc_avg_surprise(n, all_words, letter_pos, n_grams_by_words, n_gram_list, p
 		#print word_pos, i
 		if len(all_words[i]) - 1 >= letter_pos:
 			print i, len(all_words), all_words[i], len(n_grams_by_words)
-			print n_grams_by_words[i]
+			print 'n_grams_by_sentences', n_grams_by_words[i]
 			if str(list(n_grams_by_words[i][letter_pos])) in probs:
 				sum_start += -math.log(probs[str(list(n_grams_by_words[i][letter_pos]))])
 				count_start += 1
 				info_values.append(-math.log(probs[str(list(n_grams_by_words[i][letter_pos]))]))
 				pos_list.append(letter_pos)
 			else:
+				print n_grams_by_words[i][letter_pos]
+				print letter_freqs[n_grams_by_words[i][letter_pos][-1]]#
 				probs[str(list(n_grams_by_words[i][letter_pos]))] = float(n_gram_freqs[str(list(n_grams_by_words[i][letter_pos]))])/letter_freqs[n_grams_by_words[i][letter_pos][-1]]#the las word in the gram
 				sum_start += -math.log(probs[str(list(n_grams_by_words[i][letter_pos]))])
 				count_start += 1
@@ -193,6 +205,8 @@ def calc_avg_surprise(n, all_words, letter_pos, n_grams_by_words, n_gram_list, p
 				probs[str(list(n_grams_by_words[i][-letter_pos - 1]))] = float(n_gram_freqs[str(list(n_grams_by_words[i][-letter_pos - 1]))])/letter_freqs[n_grams_by_words[i][-letter_pos - 1][-1]]#the las letter in the gram
 				sum_end += -math.log(probs[str(list(n_grams_by_words[i][-letter_pos - 1]))])
 				count_end += 1
+			if sum_start == 0:
+				print letter_pos, probs[str(list(n_grams_by_words[i][letter_pos]))], letter_freqs[n_grams_by_words[i][letter_pos][-1]]
 
 
 
@@ -202,4 +216,4 @@ def calc_avg_surprise(n, all_words, letter_pos, n_grams_by_words, n_gram_list, p
 
 
 
-main(2)
+main(3)
