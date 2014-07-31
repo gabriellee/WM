@@ -29,10 +29,10 @@ def main(n):
 	#all_words = brown.words()
 	#pdb.set_trace()
 	sentence_list = [list(sent) for sent in sentence_list]
-
+	shuffle(sentence_list)
 
 	for i in range(len(sentence_list)):
-		sentence_list[i] = filter(lambda a: a != ',' and a != '``' and a != '\'' and a != '\"' and a != '.' and a != '(' and a != ')' and a != '?' and a != '!', sentence_list[i]) 
+		sentence_list[i] = filter(lambda a: a != ',' and a != '\'\'' and a != '``' and a != '\'' and a != '\"' and a != '.' and a != '(' and a != ')' and a != '?' and a != '!', sentence_list[i]) 
 	#pdb.set_trace()
 
 	sentence_list = [sentence for sentence in sentence_list if len(sentence) == 4]
