@@ -18,7 +18,7 @@ def main(n):
 			n: the number of loop through every first word, determine how surprising each set of words is.  Then determine the probability of surprise by position'''
 	start_time = time.time()
 	print start_time
-	w = csv.writer(open("pos_info_letters_tri.csv", "w"))
+	w = csv.writer(open("letter_info_unigram_20000_9ltr.csv", "w"))
 
 
 	#sentence_list, all_words = divide_into_sentences()
@@ -31,8 +31,8 @@ def main(n):
 	shuffle(all_words)
 
 	#shorten the list to decrease computational load
-	#all_words = [all_words[d] for d in range(len(all_words)) if len(all_words[d]) == 3]
-	all_words = all_words[:10000]
+	all_words = [all_words[d] for d in range(len(all_words)) if len(all_words[d]) == 9]
+	all_words = all_words[:20000]
 	all_letters = itertools.chain.from_iterable(all_words)
 	all_letters = list(all_letters)
 	#get rid of punctuation in sentences
@@ -189,17 +189,17 @@ def calc_avg_surprise(n, all_words, letter_pos, n_grams_by_words, n_gram_list, p
 		#print "loop da loop" +str(time.time())
 		#print word_pos, i
 		if len(all_words[i]) - 1 >= letter_pos:
-			print i, len(all_words), all_words[i], len(n_grams_by_words)
-			print 'n_grams_by_sentences', n_grams_by_words[i]
+			#print i, len(all_words), all_words[i], len(n_grams_by_words)
+			#print 'n_grams_by_sentences', n_grams_by_words[i]
 			if str(list(n_grams_by_words[i][letter_pos])) in probs:
 				sum_start += -math.log(probs[str(list(n_grams_by_words[i][letter_pos]))])
 				count_start += 1
 				info_values.append(-math.log(probs[str(list(n_grams_by_words[i][letter_pos]))]))
 				pos_list.append(letter_pos)
 			else:
-				print n_grams_by_words[i][letter_pos]
-				print letter_freqs[n_grams_by_words[i][letter_pos][-1]]#
-				probs[str(list(n_grams_by_words[i][letter_pos]))] = float(n_gram_freqs[str(list(n_grams_by_words[i][letter_pos]))])/short_gram_freqs[str(n_grams_by_words[i][letter_pos][0:-1])]#letter_freqs[n_grams_by_words[i][letter_pos][0:-1]]#the las word in the gram
+				#print n_grams_by_words[i][letter_pos]
+				#print letter_freqs[n_grams_by_words[i][letter_pos][-1]]#
+				probs[str(list(n_grams_by_words[i][letter_pos]))] = (float(n_gram_freqs[str(list(n_grams_by_words[i][letter_pos]))])/short_gram_freqs[str(n_grams_by_words[i][letter_pos][0:-1])]) / len(all_letters)#letter_freqs[n_grams_by_words[i][letter_pos][0:-1]]#the las word in the gram
 				sum_start += -math.log(probs[str(list(n_grams_by_words[i][letter_pos]))])
 				count_start += 1
 				info_values.append(-math.log(probs[str(list(n_grams_by_words[i][letter_pos]))]))
@@ -211,11 +211,11 @@ def calc_avg_surprise(n, all_words, letter_pos, n_grams_by_words, n_gram_list, p
 				sum_end += -math.log(probs[str(list(n_grams_by_words[i][-letter_pos - 1]))])
 				count_end += 1
 			else:
-				probs[str(list(n_grams_by_words[i][-letter_pos - 1]))] = float(n_gram_freqs[str(list(n_grams_by_words[i][-letter_pos - 1]))])/short_gram_freqs[str(n_grams_by_words[i][-letter_pos - 1][0:-1])]#the las letter in the gram
+				probs[str(list(n_grams_by_words[i][-letter_pos - 1]))] = (float(n_gram_freqs[str(list(n_grams_by_words[i][-letter_pos - 1]))])/short_gram_freqs[str(n_grams_by_words[i][-letter_pos - 1][0:-1])]) / len(all_letters)#the las letter in the gram
 				sum_end += -math.log(probs[str(list(n_grams_by_words[i][-letter_pos - 1]))])
 				count_end += 1
-			if sum_start == 0:
-				print letter_pos, probs[str(list(n_grams_by_words[i][letter_pos]))], letter_freqs[n_grams_by_words[i][letter_pos][-1]]
+			#if sum_start == 0:
+				#print letter_pos, probs[str(list(n_grams_by_words[i][letter_pos]))], letter_freqs[n_grams_by_words[i][letter_pos][-1]]
 
 
 
@@ -225,4 +225,4 @@ def calc_avg_surprise(n, all_words, letter_pos, n_grams_by_words, n_gram_list, p
 
 
 
-main(3)
+main(1)

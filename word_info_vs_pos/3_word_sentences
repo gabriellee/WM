@@ -16,11 +16,11 @@ from nltk.util import ngrams
 def main(n):
 	'''input: 
 			n: the number of loop through every first word, determine how surprising each set of words is.  Then determine the probability of surprise by position'''
-	print 'HALLOHHH'
+	#print 'HALLOHHH'
 	start_time = time.time()
-	print start_time
+	#print start_time
 
-	w = csv.writer(open("bigfoot.csv", "w"))
+	w = csv.writer(open("word_info_bigram_10000_5wd.csv", "w"))
 
 
 	#sentence_list, all_words = divide_into_sentences()
@@ -31,18 +31,20 @@ def main(n):
 	sentence_list = [list(sent) for sent in sentence_list]
 	shuffle(sentence_list)
 
+
 	for i in range(len(sentence_list)):
 		sentence_list[i] = filter(lambda a: a != ',' and a != '\'\'' and a != '``' and a != '\'' and a != '\"' and a != '.' and a != '(' and a != ')' and a != '?' and a != '!', sentence_list[i]) 
 	#pdb.set_trace()
 
-	sentence_list = [sentence for sentence in sentence_list if len(sentence) == 4]
+	sentence_list = [sentence for sentence in sentence_list if len(sentence) == 5]
+	sentence_list = sentence_list[:10000]
 
 	#make everything lowercase
-	print sentence_list[0]
+	#print sentence_list[0]
 	for ind1 in range(len(sentence_list)):
 		for ind2 in range(len(sentence_list[ind1])):
 			sentence_list[ind1][ind2] = sentence_list[ind1][ind2].lower()
-	print sentence_list[0] 
+	#print sentence_list[0] 
 	#pdb.set_trace()
 	all_words = [tuple((sen[t],)) for sen in sentence_list for t in range(len(sen))]
 	#all_words = [wd.lower() for wd in all_words]
@@ -75,8 +77,11 @@ def main(n):
 	y_end = []
 	x = []
 	all_probs = dict()
+	prev_time = time3
 	#pdb.set_trace()
 	for word_pos in range(maxm):
+		prev_time = str(time.time() - float(prev_time))
+		print prev_time
 		avg_info_start, avg_info_end, all_probs, info_values, pos_list = calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_list, all_probs, all_words)
 		y_start.append(avg_info_start)
 		y_end.append(avg_info_end)
@@ -146,10 +151,10 @@ def divide_into_grams(n,sentence_list):
 	for j in range(n-1):
 		for i in range(len(sentence_list)):
 			n_grams_by_sentences[i] = [tuple(sentence_list[i][j:n-1])] + n_grams_by_sentences[i]
-			print n_grams_by_sentences[i]
+			# print n_grams_by_sentences[i]
 		#pdb.set_trace()
 		#n_gram_list = [sentence.split()[j] for sentence in sentence_list]
-	print time.time() - timea
+	# print time.time() - timea
 	#pdb.set_trace()
 	n_gram_list = [item for sublist in n_grams_by_sentences for item in sublist]
 
@@ -201,7 +206,7 @@ def calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_l
 			sum_start: the sum of information values for all words at word_pos in each sentence.
 			sum_end: the sum of information values for all words at -word_pos in each sentence.
 	'''
-	print 'calculating probability of surprise given position'
+	# print 'calculating probability of surprise given position'
 	count_end = 0
 	count_start = 0
 	cumulative_sum = 0
@@ -246,7 +251,7 @@ def calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_l
 	#pdb.set_trace()
 
 #	n_gram_freqs[str(ngram)] = [n_gram_freqs[str(ngram)] + sum([1 for ng in n_gram_list if ngram == ng[0:len(ngram)] and len(ng) > len(ngram)]) for ngram in n_grams_unique if len(ngram) < n]
-	print time.time()
+	# print time.time()
 	
 	#Compute average information values for words at word_pos from the beginning and end of the sentence
 	#loops through each sentence, collecting information values for words at word_pos from the beginning and end of the sentence
@@ -257,7 +262,7 @@ def calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_l
 		#print word_pos, i
 		#print n_grams_by_sentences[i]
 		if len(sentence_list[i]) - 1 >= word_pos:
-			print i, word_pos
+			# print i, word_pos
 			if str(list(n_grams_by_sentences[i][word_pos])) in probs:
 				sum_start += -math.log(probs[str(list(n_grams_by_sentences[i][word_pos]))])
 				count_start += 1
@@ -265,7 +270,10 @@ def calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_l
 				pos_list.append(word_pos)
 			else:
 				#pdb.set_trace()
-				probs[str(list(n_grams_by_sentences[i][word_pos]))] = float(n_gram_freqs[str(list(n_grams_by_sentences[i][word_pos]))])/short_gram_freqs[str(n_grams_by_sentences[i][word_pos][0:-1])]#the las word in the gram
+				probs[str(list(n_grams_by_sentences[i][word_pos]))] = (float(n_gram_freqs[str(list(n_grams_by_sentences[i][word_pos]))])/short_gram_freqs[str(n_grams_by_sentences[i][word_pos][0:-1])]) / len(all_words)#the las word in the gram
+				# if float(n_gram_freqs[str(list(n_grams_by_sentences[i][word_pos]))]) > short_gram_freqs[str(n_grams_by_sentences[i][word_pos][0:-1])]:
+				# 	print 'line 274' + str(list(n_grams_by_sentences[i][word_pos])) + ': ' + str(n_gram_freqs[str(list(n_grams_by_sentences[i][word_pos]))])
+				# 	print str(n_grams_by_sentences[i][word_pos][0:-1]) + ': ' + str(short_gram_freqs[str(n_grams_by_sentences[i][word_pos][0:-1])])
 				sum_start += -math.log(probs[str(list(n_grams_by_sentences[i][word_pos]))])
 				count_start += 1
 				info_values.append(-math.log(probs[str(list(n_grams_by_sentences[i][word_pos]))]))
@@ -276,13 +284,18 @@ def calc_avg_surprise(n, sentence_list, word_pos, n_grams_by_sentences, n_gram_l
 				sum_end += -math.log(probs[str(list(n_grams_by_sentences[i][-word_pos-1]))])
 				count_end += 1
 			else:
-				print str(n_grams_by_sentences[i][-word_pos-1])
-				print str(n_grams_by_sentences[i][-word_pos-1][0:-1])
-				probs[str(list(n_grams_by_sentences[i][-word_pos-1]))] = float(n_gram_freqs[str(list(n_grams_by_sentences[i][-word_pos-1]))])/short_gram_freqs[str(n_grams_by_sentences[i][-word_pos-1][0:-1])]#the las word in the gram
+				# print str(n_grams_by_sentences[i][-word_pos-1])
+				# print str(n_grams_by_sentences[i][-word_pos-1][0:-1])
+				#prob(H|D) = (#(D,H)/#D) / #total words
+				probs[str(list(n_grams_by_sentences[i][-word_pos-1]))] = (float(n_gram_freqs[str(list(n_grams_by_sentences[i][-word_pos-1]))]) / short_gram_freqs[str(n_grams_by_sentences[i][-word_pos-1][0:-1])])  /  len(all_words)#the las word in the gram
+				
+				# if float(n_gram_freqs[str(list(n_grams_by_sentences[i][-word_pos-1]))]) > short_gram_freqs[str(n_grams_by_sentences[i][-word_pos-1][0:-1])]:
+				# 	print 'line 288' + str(list(n_grams_by_sentences[i][-word_pos-1])) + ': ' + str(n_gram_freqs[str(list(n_grams_by_sentences[i][-word_pos-1]))])
+				# 	print str(n_grams_by_sentences[i][-word_pos-1][0:-1]) + ': ' + str(short_gram_freqs[str(n_grams_by_sentences[i][-word_pos-1][0:-1])])
 				sum_end += -math.log(probs[str(list(n_grams_by_sentences[i][-word_pos-1]))])
 				count_end += 1
-			pdb.set_trace()
-	print "hello"
+	#pdb.set_trace()
+	#print "hello"
 	return sum_start/count_start, sum_end/count_end, probs, info_values, pos_list
 
 
