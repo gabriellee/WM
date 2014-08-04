@@ -1,0 +1,146 @@
+import re
+import pdb
+from collections import Counter
+import math
+from joblib import Parallel, delayed
+import itertools
+import time
+import pickle
+import csv
+import itertools
+from nltk.corpus import brown
+from random import shuffle
+from nltk.util import ngrams
+
+def main(n,wd_len, cap):
+	#create list of words
+	all_words = brown.words()
+	all_words = [list(word) for word in all_words if word != ',' and word != '\'\'' and word != '``' and word != '\'' and word != '\"' and word != '.' and word != '(' and word != ')' and word != '?' and word != '!'and word != []]
+	shuffle(all_words)
+	all_words = [all_words[d] for d in range(len(all_words)) if len(all_words[d]) == wd_len]
+	all_words = all_words[:20000]
+	all_letters = itertools.chain.from_iterable(all_words)
+	all_letters = list(all_letters)
+
+	#create n_gram_list
+	n_gram_list, n_grams_by_words = divide_into_grams(n,all_words)
+
+	#find frequencies of n_gram occurences
+	n_gram_freqs = {}
+	for ng in n_gram_list:
+		for i in range(len(ng)):
+			current = n_gram_freqs.get(str(list(ng[0:i+1])),0)
+			n_gram_freqs[str(list(ng[0:i+1]))] = current + 1
+
+	#create a list of short gram frequencies
+	short_grams = []
+	for length in range(1, n):
+		short_grams.extend(Parallel(n_jobs=2)(delayed(ngrams)(wd, length) for wd in all_words))
+	temp_chain = itertools.chain.from_iterable(short_grams)
+	short_grams = list(temp_chain)
+
+	short_grams = [str(elmn) for elmn in short_grams] + ['()']
+	short_gram_freqs = Counter(short_grams)
+
+
+	#create list of policies
+	policy_list = []
+	for pos1 in range(wd_len):
+		if cap >= 2:
+			for pos2 in range(1,wd_len):
+				if cap >= 3:
+					for pos3 in range(2,wd_len):
+						if cap >= 4:
+							for pos4 in range(3,wd_len):
+								policy_list.append({pos1,pos2,pos3,pos4})
+						else:
+							policy_list.append({pos1,pos2,pos3})
+				else:
+					policy_list.append({pos1,pos2})
+		else:
+			policy_list.append({pos1})
+	policy_list = [pol for pol in policy_list if len(pol) == cap]
+	print policy_list
+
+
+	#iterate through policies
+	probs = {}
+	highest_info = 0
+	for policy in policy_list:
+		count = 0
+		sum_info = 0
+		avg_info = 0
+		sum_wd_info = 0
+		for word_idx in range(len(all_words)):
+			#pick out the words that match the positions specified by policy
+			#check the uniqueness
+			#take average uniqueness
+			sum_wd_info = 0
+			count +=1
+			for letter_pos in policy:
+				if n_grams_by_words[word_idx][letter_pos] in probs:
+					sum_wd_info += -math.log(probs[str(list(n_grams_by_words[word_idx][letter_pos]))])
+					#print letter_pos
+					#print str(list(n_grams_by_words[word_idx][letter_pos]))
+				else:
+					probs[str(list(n_grams_by_words[word_idx][letter_pos]))] = (float(n_gram_freqs[str(list(n_grams_by_words[word_idx][letter_pos]))])/short_gram_freqs[str(n_grams_by_words[word_idx][letter_pos][0:-1])]) / len(all_letters)
+					sum_wd_info += -math.log(probs[str(list(n_grams_by_words[word_idx][letter_pos]))])
+					#print letter_pos
+					#print str(list(n_grams_by_words[word_idx][letter_pos]))
+			#pdb.set_trace()
+			sum_info += sum_wd_info/cap
+			#print sum_info
+		avg_info = sum_info/count
+		#pdb.set_trace()
+		print avg_info 
+		if avg_info > highest_info:
+			highest_info = avg_info
+			best_policy = list(policy)
+		print best_policy, highest_info
+		print policy, avg_info
+	return best_policy, highest_info
+
+
+
+
+def divide_into_grams(n,all_words):
+	'''input:
+			n is the number of words in a n_gram
+			all_words is a list of all of the words in the corpus
+		output:
+			n_gram_list is the list of all n-grams in the corpus'''
+	#split into sentences, then make lists of n-grams from the sentences, it should loop through len(sentences)-n, if that value is negative, skip
+	n_grams_by_words = []
+	n_gram_list = []
+	gram_dict = dict()
+
+	timea = time.time()
+	n_grams_by_words = Parallel(n_jobs=2)(delayed(ngrams)(word, n) for word in all_words)
+	#collect the words with fewer than n-1 words preceding them
+	# n_grams_by_sentences = [n_grams_by_sentences[i] for i in range(len(n_grams_by_sentences)) if n_grams_by_sentences[i]]
+	# split_sentences = [sentence.split() for sentence in sentence_list]
+	# split_sentences = [split_sentences[k] for k in range(len(split_sentences)) if split_sentences[k]]
+
+	#removes empty lists
+	for word_grams in n_grams_by_words:
+		word_grams = [x for x in word_grams if x]
+
+	#add grams shorter than n
+	for i in range(len(all_words)):
+		if str(all_words[i]) in gram_dict:
+			n_grams_by_words[i] = gram_dict[str(all_words[i])]
+		else:
+			for j in range(n-2,-1, -1):
+				n_grams_by_words[i] = [tuple(all_words[i][0:j+1])] + n_grams_by_words[i]
+			gram_dict[str(all_words[i])] = n_grams_by_words[i]
+			#print j, n_grams_by_words[i]
+
+	print time.time() - timea
+	n_gram_list = [item for sublist in n_grams_by_words for item in sublist]
+	#pdb.set_trace()
+
+
+
+
+	return n_gram_list, n_grams_by_words
+main(1,4,2)
