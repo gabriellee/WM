@@ -63,21 +63,30 @@ def main(n,wd_len, cap):
 	for pol in policy_list:
 		pol = list(pol)
 		#create a list and set of all possible letter combos for the particular positions
-		all_combos = [tuple([wrd[pol[0]], wrd[pol[1]]]) for wrd in all_words]
+		all_combos = [tuple([wrd[pol[i]] for i in range(len(pol))]) for wrd in all_words]
 		combos_by_pol.append(all_combos)
 		print pol
 		#pdb.set_trace()
 		all_combos.extend(list(combo_set))
 		combo_set = set(all_combos)
+		combo_freqs_by_pol[pol] = Counter(all_combos)
 
-	combo_freqs = Counter(combo_set)
 
 	#create a frequency map of all words
 	word_freqs = Counter(all_words)
 
 	#find the average info content for each combo
 	for policy in policy_list:
-		average_info
+		average_info = calc_entropy(policy, word_freqs, combo_freqs_by_pol[pol], len(all_combos), len(all_words), all_words)
+		print policy, average_info
+	pdb.set_trace()
+
+def calc_entropy(policy, word_freqs, combo_freqs, num_combos, num_words, all_words):
+	for word in all_words:
+		combo = tuple([word[policy[i]] for i in range(len(policy))])
+		sum_entropy += log((word_freqs[word]/num_words) / (combo_freqs[combo]/len(combos_freqs)))
+	return sum_entropy/num_words
+
 
 
 	#pdb.set_trace()
