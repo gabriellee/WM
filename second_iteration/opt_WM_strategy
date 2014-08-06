@@ -26,6 +26,7 @@ def main(n,wd_len, cap):
 
 	all_letters = itertools.chain.from_iterable(all_words)
 	all_letters = list(all_letters)
+	all_words = [tuple(word) for word in all_words]
 
 
 	#find frequencies of n_gram occurences
@@ -59,17 +60,20 @@ def main(n,wd_len, cap):
 
 
 	#create a frequency map of all combos of letters
+	#combos_by_pol = []
+	combo_freqs_by_pol = dict()
 	combo_set = set()
 	for pol in policy_list:
 		pol = list(pol)
 		#create a list and set of all possible letter combos for the particular positions
 		all_combos = [tuple([wrd[pol[i]] for i in range(len(pol))]) for wrd in all_words]
-		combos_by_pol.append(all_combos)
+		#combos_by_pol.append(all_combos)
 		print pol
 		#pdb.set_trace()
 		all_combos.extend(list(combo_set))
 		combo_set = set(all_combos)
-		combo_freqs_by_pol[pol] = Counter(all_combos)
+		#pdb.set_trace()
+		combo_freqs_by_pol[tuple(pol)] = Counter(all_combos)
 
 
 	#create a frequency map of all words
@@ -77,14 +81,25 @@ def main(n,wd_len, cap):
 
 	#find the average info content for each combo
 	for policy in policy_list:
-		average_info = calc_entropy(policy, word_freqs, combo_freqs_by_pol[pol], len(all_combos), len(all_words), all_words)
+		#pdb.set_trace()
+		average_info = calc_entropy(policy, word_freqs, combo_freqs_by_pol[tuple(pol)], len(all_combos), len(all_words), all_words)
 		print policy, average_info
-	pdb.set_trace()
+	#pdb.set_trace()
 
 def calc_entropy(policy, word_freqs, combo_freqs, num_combos, num_words, all_words):
+	''' Calculates the average entropy when two given positions are remembered.  Sums the probability of a given word divided by the commonness of the letters at positions specified by the policy within that word, across all words.  Returns the average.
+	input:
+		policy: list of two positions at which letters are remembered
+		word_freqs: Counter mapping each word to the number of times it appears in the sample
+		combo_freqs: Counter mapping each combination of letters to the number of times it appears at the positions specified by policy_list
+		num_combos: integer number of different letter combinations that occurs at the given positions within the sample
+		num_words: integer number of words in the sample
+		all_words: list containing tuples of letters in each word.  Words repeated in the text are repeated in all_words'''
+	sum_entropy = 0
 	for word in all_words:
 		combo = tuple([word[policy[i]] for i in range(len(policy))])
-		sum_entropy += log((word_freqs[word]/num_words) / (combo_freqs[combo]/len(combos_freqs)))
+		#pdb.set_trace()
+		sum_entropy += math.log((float(word_freqs[word])/num_words) / (float(combo_freqs[combo])/len(combo_freqs)))
 	return sum_entropy/num_words
 
 
