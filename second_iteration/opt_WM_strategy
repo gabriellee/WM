@@ -21,7 +21,7 @@ def main(wd_len, cap):
 			info_values_by_pol: list of lists of info values for each word in each policy
 			policy_list:  list of policies which can be used to order the entries of avg_info_by_pol and info_values_by_pol'''
 	#open csv document
-	w = csv.writer(open("4ltr_cap2_10000wds.csv", "w"))
+	#w = csv.writer(open("4ltr_cap2_10000wds.csv", "w"))
 
 
 	#create list of words
@@ -29,8 +29,7 @@ def main(wd_len, cap):
 	all_words = [list(word) for word in all_words if word != ',' and word != '\'\'' and word != '``' and word != '\'' and word != '\"' and word != '.' and word != '(' and word != ')' and word != '?' and word != '!'and word != []]
 	shuffle(all_words)
 	all_words = [all_words[d] for d in range(len(all_words)) if len(all_words[d]) == wd_len]
-	all_words = all_words[:10000]
-
+	all_words = all_words[:20000]
 	#make everything lowercase
 	for ind1 in range(len(all_words)):
 		for ind2 in range(len(all_words[ind1])):
@@ -41,7 +40,7 @@ def main(wd_len, cap):
 	all_letters = list(all_letters)
 	all_words = [tuple(word) for word in all_words]
 
-
+	print len(all_words), len(all_letters)
 	n_gram_freqs = {}
 
 
@@ -54,7 +53,15 @@ def main(wd_len, cap):
 					for pos3 in range(2,wd_len):
 						if cap >= 4:
 							for pos4 in range(3,wd_len):
-								policy_list.append({pos1,pos2,pos3,pos4})
+								if cap >=5:
+									for pos5 in range(4,wd_len):
+										if cap >=6:
+											for pos6 in range(5, wd_len):
+												policy_list.append({pos1,pos2,pos3,pos4,pos5,pos6})
+										else:
+											policy_list.append({pos1,pos2,pos3,pos4,pos5})
+								else:
+									policy_list.append({pos1,pos2,pos3,pos4})
 						else:
 							policy_list.append({pos1,pos2,pos3})
 				else:
@@ -98,9 +105,12 @@ def main(wd_len, cap):
 		print policy, average_info
 	
 	#write return values to csv
-	w.writerow(policy_list)
-	w.writerow(info_values_by_pol)
-	w.writerow(avg_info_by_pol)
+	f = open('ltr5_cap2_20000wds.pickle', 'w')
+	pickle.dump([policy_list, info_values_by_pol, avg_info_by_pol], f)
+	# pdb.set_trace()
+	# w.writerow(policy_list)
+	# w.writerow(info_values_by_pol)
+	# w.writerow(avg_info_by_pol)
 	return policy_list, info_values_by_pol, avg_info_by_pol
 	#pdb.set_trace()
 
@@ -120,7 +130,7 @@ def calc_entropy(policy, word_freqs, combo_freqs, num_combos, num_words, all_wor
 		#print word
 		#pdb.set_trace()
 		combo = tuple([word[policy[i]] for i in range(len(policy))])
-		pdb.set_trace()
+		#pdb.set_trace()
 		#print (float(word_freqs[word])/num_words)
 		#print combo
 		#print combo_freqs
@@ -136,4 +146,4 @@ def calc_entropy(policy, word_freqs, combo_freqs, num_combos, num_words, all_wor
 
 
 
-main(4,2)
+main(5,2)
